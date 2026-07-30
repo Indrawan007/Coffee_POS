@@ -10,6 +10,7 @@ import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/products/presentation/screens/product_list_screen.dart';
 import '../../features/products/presentation/screens/product_form_screen.dart';
+import '../../features/pos/presentation/screens/pos_screen.dart';
 
 // ✅ Hapus @riverpod annotation pada router
 // ✅ Gunakan Provider biasa dari Riverpod
@@ -85,9 +86,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.pos,
         name: 'pos',
-        builder: (_, __) => const Scaffold(
-          body: Center(child: Text('POS – Coming Sprint 2')),
-        ),
+        builder: (_, __) => const PosScreen(),
       ),
       GoRoute(
         path: AppRoutes.reports,

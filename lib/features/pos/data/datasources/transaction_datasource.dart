@@ -1,6 +1,6 @@
+import 'package:coffee_pos/core/utils/invoive_generator.dart';
 import 'package:drift/drift.dart';
 import '../../../../core/database/app_database.dart';
-import '../../../../core/utils/invoice_generator.dart';
 import '../../domain/models/cart_item_model.dart';
 import '../../domain/models/cart_state_model.dart';
 

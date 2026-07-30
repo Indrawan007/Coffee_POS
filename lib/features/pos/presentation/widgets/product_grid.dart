@@ -1,12 +1,12 @@
 import 'package:coffee_pos/core/constant/app_colors.dart';
 import 'package:coffee_pos/core/constant/app_sizes.dart';
+import 'package:coffee_pos/features/pos/presentation/bottomsheets/variant_addon_bottonmsheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../shared/widgets/empty_state.dart';
 import '../../../products/data/datasources/product_datasource.dart';
-import '../bottomsheets/variant_addon_bottomsheet.dart';
 
 class ProductGrid extends ConsumerWidget {
   const ProductGrid({super.key, required this.products});
