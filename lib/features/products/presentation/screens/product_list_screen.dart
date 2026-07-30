@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../shared/widgets/app_dialog.dart';
 import '../../../../shared/widgets/empty_state.dart';
@@ -84,7 +82,7 @@ class _ProductCard extends ConsumerWidget {
             : Container(
                 width: 50,
                 height: 50,
-                color: AppColors.primary.withOpacity(0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 child: const Icon(
                   Icons.coffee,
                   color: AppColors.primary,
@@ -129,7 +127,7 @@ class _ProductCard extends ConsumerWidget {
           children: [
             Switch(
               value: product.isActive,
-              activeColor: AppColors.primary,
+              activeThumbColor: AppColors.primary,
               onChanged: (val) => notifier.toggleActive(
                 product.id, val,
               ),

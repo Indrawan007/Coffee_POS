@@ -1,40 +1,45 @@
 import 'package:drift/drift.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+
 import '../../../../core/database/app_database.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../data/datasources/product_datasource.dart';
 
 part 'product_provider.g.dart';
 
+// ─── DATASOURCE PROVIDER ──────────────────────────
 @riverpod
-ProductDatasource productDatasource(ProductDatasourceRef ref) {
+ProductDatasource productDatasource(Ref ref) {
   return ProductDatasource(ref.watch(appDatabaseProvider));
 }
 
+// ─── PRODUCTS WITH DETAILS ────────────────────────
 @riverpod
-Future<List<ProductWithDetails>> productsWithDetails(
-  ProductsWithDetailsRef ref,
-) {
+Future<List<ProductWithDetails>> productsWithDetails(Ref ref) {
   return ref.watch(productDatasourceProvider).getAllWithDetails();
 }
 
+// ─── ACTIVE ADDONS ────────────────────────────────
 @riverpod
-Future<List<AddonsTableData>> activeAddons(ActiveAddonsRef ref) {
+Future<List<AddonsTableData>> activeAddons(Ref ref) {
   return ref.watch(productDatasourceProvider).getActiveAddons();
 }
 
-// ─── PRODUCT FORM STATE ───────────────────────────
+// ─── VARIANT INPUT MODEL ─────────────────────────
 class VariantInput {
   VariantInput({
     this.id,
     required this.name,
     required this.priceAdjustment,
   });
+
   final int? id;
   String name;
   double priceAdjustment;
 }
 
+// ─── PRODUCT FORM STATE ───────────────────────────
 class ProductFormState {
   const ProductFormState({
     this.isLoading = false,
@@ -62,6 +67,7 @@ class ProductFormState {
   }
 }
 
+// ─── PRODUCT FORM NOTIFIER ────────────────────────
 @riverpod
 class ProductFormNotifier extends _$ProductFormNotifier {
 
@@ -87,6 +93,7 @@ class ProductFormNotifier extends _$ProductFormNotifier {
       int productId;
 
       if (id == null) {
+        // ── INSERT ────────────────────────────────
         productId = await ds.insert(
           ProductsTableCompanion.insert(
             categoryId: categoryId,
@@ -100,6 +107,7 @@ class ProductFormNotifier extends _$ProductFormNotifier {
           ),
         );
       } else {
+        // ── UPDATE ────────────────────────────────
         productId = id;
         await ds.update(
           ProductsTableCompanion(
@@ -113,23 +121,30 @@ class ProductFormNotifier extends _$ProductFormNotifier {
             updatedAt: Value(now),
           ),
         );
+        // Hapus variants lama sebelum insert baru
         await ds.deleteVariants(id);
       }
 
-      // Save variants
+      // ── SAVE VARIANTS ─────────────────────────
       if (variants.isNotEmpty) {
         await ds.insertVariants(
-          variants.map((v) =>
-            ProductVariantsTableCompanion.insert(
-              productId: productId,
-              name: v.name,
-              priceAdjustment: Value(v.priceAdjustment),
-            ),
-          ).toList(),
+          variants
+            .where((v) => v.name.trim().isNotEmpty)
+            .map((v) =>
+              ProductVariantsTableCompanion.insert(
+                productId: productId,
+                name: v.name.trim(),
+                priceAdjustment: Value(v.priceAdjustment),
+              ),
+            )
+            .toList(),
         );
       }
 
-      state = state.copyWith(isLoading: false, isSuccess: true);
+      state = state.copyWith(
+        isLoading: false,
+        isSuccess: true,
+      );
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -139,7 +154,9 @@ class ProductFormNotifier extends _$ProductFormNotifier {
   }
 
   Future<void> toggleActive(int id, bool isActive) async {
-    await ref.read(productDatasourceProvider).toggleActive(id, isActive);
+    await ref
+      .read(productDatasourceProvider)
+      .toggleActive(id, isActive);
   }
 
   Future<void> delete(int id) async {

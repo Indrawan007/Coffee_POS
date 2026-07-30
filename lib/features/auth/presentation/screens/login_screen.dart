@@ -2,19 +2,14 @@ import 'package:coffee_pos/core/constant/app_colors.dart';
 import 'package:coffee_pos/core/constant/app_sizes.dart';
 import 'package:coffee_pos/core/constant/app_strings.dart';
 import 'package:coffee_pos/core/router/app_router.dart';
+import 'package:coffee_pos/features/auth/presentation/providers/auth_provider.dart';
 import 'package:coffee_pos/shared/widgets/app_button.dart';
 import 'package:coffee_pos/shared/widgets/app_text_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_sizes.dart';
-import '../../../core/constants/app_strings.dart';
-import '../../../core/router/app_router.dart';
-import '../../../shared/widgets/app_button.dart';
-import '../../../shared/widgets/app_text_field.dart';
-import '../providers/providers/auth_provider.dart';
+
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -114,12 +109,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         Container(
                           padding: const EdgeInsets.all(AppSizes.sm),
                           decoration: BoxDecoration(
-                            color: AppColors.error.withOpacity(0.1),
+                            color: AppColors.error.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(
                               AppSizes.radiusSm,
                             ),
                             border: Border.all(
-                              color: AppColors.error.withOpacity(0.3),
+                              color: AppColors.error.withValues(alpha: 0.3),
                             ),
                           ),
                           child: Row(
@@ -189,9 +184,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
 
                       const SizedBox(height: AppSizes.md),
-                      Text(
+                      const Text(
                         '${AppStrings.appVersion} • Offline Mode',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppColors.textHint,
                           fontSize: 12,
                         ),

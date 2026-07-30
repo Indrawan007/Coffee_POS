@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../shared/widgets/app_dialog.dart';
 import '../../../../shared/widgets/empty_state.dart';
@@ -72,7 +70,7 @@ class _CategoryCard extends ConsumerWidget {
         ),
         leading: CircleAvatar(
           backgroundColor: category.isActive
-            ? AppColors.primary.withOpacity(0.1)
+            ? AppColors.primary.withValues(alpha: 0.1)
             : AppColors.border,
           child: Icon(
             Icons.category_outlined,
@@ -108,7 +106,7 @@ class _CategoryCard extends ConsumerWidget {
             // Toggle
             Switch(
               value: category.isActive,
-              activeColor: AppColors.primary,
+              activeThumbColor: AppColors.primary,
               onChanged: (val) => notifier.toggleActive(
                 category.id, val,
               ),

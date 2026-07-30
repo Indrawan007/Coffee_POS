@@ -4,6 +4,9 @@ import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
+// ✅ Import HashHelper
+import '../utils/hash_helper.dart';
+
 import 'tables/users_table.dart';
 import 'tables/categories_table.dart';
 import 'tables/products_table.dart';
@@ -43,17 +46,29 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
-  // ─── SEED DATA ────────────────────────────────────
   Future<void> _seedData() async {
     final now = DateTime.now().toIso8601String();
 
-    // Default admin
+    // Default admin user
     await into(usersTable).insert(
       UsersTableCompanion.insert(
         name: 'Administrator',
         username: 'admin',
+        // ✅ HashHelper sudah diimport
         password: HashHelper.hashPassword('admin123'),
         role: const Value('admin'),
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
+
+    // Default kasir user
+    await into(usersTable).insert(
+      UsersTableCompanion.insert(
+        name: 'Kasir 1',
+        username: 'kasir',
+        password: HashHelper.hashPassword('kasir123'),
+        role: const Value('cashier'),
         createdAt: now,
         updatedAt: now,
       ),
@@ -63,6 +78,8 @@ class AppDatabase extends _$AppDatabase {
     await into(settingsTable).insert(
       SettingsTableCompanion.insert(
         storeName: const Value('Coffee Shop'),
+        storeAddress: const Value('Jl. Contoh No.1'),
+        storePhone: const Value('0812-3456-7890'),
         taxPercent: const Value(10.0),
         servicePercent: const Value(5.0),
         updatedAt: now,
@@ -88,7 +105,7 @@ class AppDatabase extends _$AppDatabase {
       ),
     );
 
-    await into(categoriesTable).insert(
+    final foodId = await into(categoriesTable).insert(
       CategoriesTableCompanion.insert(
         name: 'Food',
         sortOrder: const Value(3),
@@ -120,10 +137,15 @@ class AppDatabase extends _$AppDatabase {
           price: const Value(0),
           createdAt: now,
         ),
+        AddonsTableCompanion.insert(
+          name: 'Extra Whip',
+          price: const Value(4000),
+          createdAt: now,
+        ),
       ]);
     });
 
-    // Default products
+    // Default products – Coffee
     final latteId = await into(productsTable).insert(
       ProductsTableCompanion.insert(
         categoryId: coffeeId,
@@ -179,11 +201,73 @@ class AppDatabase extends _$AppDatabase {
       ]);
     });
 
-    await into(productsTable).insert(
+    final americanoId = await into(productsTable).insert(
+      ProductsTableCompanion.insert(
+        categoryId: coffeeId,
+        name: 'Americano',
+        basePrice: const Value(22000),
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
+
+    await batch((b) {
+      b.insertAll(productVariantsTable, [
+        ProductVariantsTableCompanion.insert(
+          productId: americanoId,
+          name: 'Hot',
+          priceAdjustment: const Value(0),
+        ),
+        ProductVariantsTableCompanion.insert(
+          productId: americanoId,
+          name: 'Ice',
+          priceAdjustment: const Value(2000),
+        ),
+      ]);
+    });
+
+    // Default products – Non Coffee
+    final matchaId = await into(productsTable).insert(
       ProductsTableCompanion.insert(
         categoryId: nonCoffeeId,
         name: 'Matcha Latte',
         basePrice: const Value(30000),
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
+
+    await batch((b) {
+      b.insertAll(productVariantsTable, [
+        ProductVariantsTableCompanion.insert(
+          productId: matchaId,
+          name: 'Hot',
+          priceAdjustment: const Value(0),
+        ),
+        ProductVariantsTableCompanion.insert(
+          productId: matchaId,
+          name: 'Ice',
+          priceAdjustment: const Value(2000),
+        ),
+      ]);
+    });
+
+    // Default products – Food
+    await into(productsTable).insert(
+      ProductsTableCompanion.insert(
+        categoryId: foodId,
+        name: 'Croissant',
+        basePrice: const Value(18000),
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
+
+    await into(productsTable).insert(
+      ProductsTableCompanion.insert(
+        categoryId: foodId,
+        name: 'Cheese Cake',
+        basePrice: const Value(25000),
         createdAt: now,
         updatedAt: now,
       ),

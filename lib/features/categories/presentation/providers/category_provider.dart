@@ -1,30 +1,31 @@
+import 'package:drift/drift.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+
 import '../../../../core/database/app_database.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../data/datasources/category_datasource.dart';
 
 part 'category_provider.g.dart';
 
+// ─── DATASOURCE PROVIDER ──────────────────────────
 @riverpod
-CategoryDatasource categoryDatasource(CategoryDatasourceRef ref) {
+CategoryDatasource categoryDatasource(Ref ref) {
   return CategoryDatasource(ref.watch(appDatabaseProvider));
 }
 
+// ─── STREAMS ──────────────────────────────────────
 @riverpod
-Stream<List<CategoriesTableData>> categoriesStream(
-  CategoriesStreamRef ref,
-) {
+Stream<List<CategoriesTableData>> categoriesStream(Ref ref) {
   return ref.watch(categoryDatasourceProvider).watchAll();
 }
 
 @riverpod
-Stream<List<CategoriesTableData>> activeCategoriesStream(
-  ActiveCategoriesStreamRef ref,
-) {
+Stream<List<CategoriesTableData>> activeCategoriesStream(Ref ref) {
   return ref.watch(categoryDatasourceProvider).watchActive();
 }
 
-// ─── CATEGORY FORM NOTIFIER ───────────────────────
+// ─── CATEGORY FORM STATE ──────────────────────────
 class CategoryFormState {
   const CategoryFormState({
     this.isLoading = false,
@@ -44,12 +45,15 @@ class CategoryFormState {
   }) {
     return CategoryFormState(
       isLoading: isLoading ?? this.isLoading,
-      errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
+      errorMessage: clearError
+        ? null
+        : errorMessage ?? this.errorMessage,
       isSuccess: isSuccess ?? this.isSuccess,
     );
   }
 }
 
+// ─── CATEGORY FORM NOTIFIER ───────────────────────
 @riverpod
 class CategoryFormNotifier extends _$CategoryFormNotifier {
 
@@ -62,6 +66,7 @@ class CategoryFormNotifier extends _$CategoryFormNotifier {
     required int sortOrder,
   }) async {
     state = state.copyWith(isLoading: true, clearError: true);
+
     try {
       final now = DateTime.now().toIso8601String();
       final ds  = ref.read(categoryDatasourceProvider);
@@ -85,17 +90,23 @@ class CategoryFormNotifier extends _$CategoryFormNotifier {
           ),
         );
       }
-      state = state.copyWith(isLoading: false, isSuccess: true);
+
+      state = state.copyWith(
+        isLoading: false,
+        isSuccess: true,
+      );
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        errorMessage: 'Gagal menyimpan kategori',
+        errorMessage: 'Gagal menyimpan kategori: $e',
       );
     }
   }
 
   Future<void> toggleActive(int id, bool isActive) async {
-    await ref.read(categoryDatasourceProvider).toggleActive(id, isActive);
+    await ref
+      .read(categoryDatasourceProvider)
+      .toggleActive(id, isActive);
   }
 
   Future<bool> delete(int id) async {

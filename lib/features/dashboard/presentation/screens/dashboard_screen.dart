@@ -68,9 +68,9 @@ class DashboardScreen extends ConsumerWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         'Selamat Datang!',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppColors.textOnPrimary,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -178,7 +178,7 @@ class _MenuCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppSizes.radiusLg),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.3),
+              color: color.withValues(alpha: 0.3),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),

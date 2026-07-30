@@ -1,72 +1,119 @@
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
 import '../../../../core/database/app_database.dart';
-import '../../../../core/utils/hash_helper.dart';
+import '../../data/datasources/auth_local_datasource.dart';
 import '../../domain/entities/user_entity.dart';
-import 'package:drift/drift.dart';
 
-class AuthLocalDatasource {
-  const AuthLocalDatasource(this._db);
+part 'auth_provider.g.dart';
 
-  final AppDatabase _db;
+// ─── DB PROVIDER ─────────────────────────────────
+@riverpod
+AppDatabase appDatabase(Ref ref) {
+  final db = AppDatabase();
+  ref.onDispose(db.close);
+  return db;
+}
 
-  static const _keyUserId   = 'user_id';
-  static const _keyUserName = 'user_name';
-  static const _keyUserRole = 'user_role';
+// ─── DATASOURCE PROVIDER ─────────────────────────
+@riverpod
+AuthLocalDatasource authDatasource(Ref ref) {
+  return AuthLocalDatasource(ref.watch(appDatabaseProvider));
+}
 
-  Future<UserEntity?> login(
+// ─── AUTH STATE ───────────────────────────────────
+class AuthState {
+  const AuthState({
+    this.user,
+    this.isLoading = false,
+    this.errorMessage,
+  });
+
+  final UserEntity? user;
+  final bool isLoading;
+  final String? errorMessage;
+
+  bool get isAuthenticated => user != null;
+
+  AuthState copyWith({
+    UserEntity? user,
+    bool? isLoading,
+    String? errorMessage,
+    bool clearUser = false,
+    bool clearError = false,
+  }) {
+    return AuthState(
+      user: clearUser ? null : (user ?? this.user),
+      isLoading: isLoading ?? this.isLoading,
+      errorMessage: clearError
+        ? null
+        : (errorMessage ?? this.errorMessage),
+    );
+  }
+}
+
+// ─── AUTH NOTIFIER ────────────────────────────────
+@riverpod
+class AuthNotifier extends _$AuthNotifier {
+
+  @override
+  AuthState build() {
+    Future.microtask(_loadSession);
+    return const AuthState();
+  }
+
+  Future<void> _loadSession() async {
+    state = state.copyWith(isLoading: true);
+    try {
+      final user = await ref
+        .read(authDatasourceProvider)
+        .getSession();
+
+      state = state.copyWith(
+        user: user,
+        isLoading: false,
+      );
+    } catch (_) {
+      state = const AuthState();
+    }
+  }
+
+  Future<void> login(
     String username,
     String password,
   ) async {
-    final hash = HashHelper.hashPassword(password);
-
-    final user = await (_db.select(_db.usersTable)
-      ..where((u) =>
-        u.username.equals(username) &
-        u.password.equals(hash) &
-        u.isActive.equals(true),
-      )
-    ).getSingleOrNull();
-
-    if (user == null) return null;
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_keyUserId, user.id);
-    await prefs.setString(_keyUserName, user.name);
-    await prefs.setString(_keyUserRole, user.role);
-
-    return UserEntity(
-      id: user.id,
-      name: user.name,
-      username: user.username,
-      role: user.role,
-      isActive: user.isActive,
+    state = state.copyWith(
+      isLoading: true,
+      clearError: true,
     );
-  }
 
-  Future<UserEntity?> getSession() async {
-    final prefs = await SharedPreferences.getInstance();
-    final id    = prefs.getInt(_keyUserId);
-    if (id == null) return null;
+    try {
+      final user = await ref
+        .read(authDatasourceProvider)
+        .login(username.trim(), password.trim());
 
-    final user = await (_db.select(_db.usersTable)
-      ..where((u) => u.id.equals(id))
-    ).getSingleOrNull();
+      if (user == null) {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: 'Username atau password salah',
+        );
+        return;
+      }
 
-    if (user == null) return null;
+      state = AuthState(user: user);
 
-    return UserEntity(
-      id: user.id,
-      name: user.name,
-      username: user.username,
-      role: user.role,
-      isActive: user.isActive,
-    );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Terjadi kesalahan. Coba lagi.',
+      );
+    }
   }
 
   Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_keyUserId);
-    await prefs.remove(_keyUserName);
-    await prefs.remove(_keyUserRole);
+    try {
+      await ref.read(authDatasourceProvider).logout();
+    } catch (_) {}
+    state = const AuthState();
   }
 }

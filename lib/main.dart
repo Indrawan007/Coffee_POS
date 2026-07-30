@@ -9,14 +9,12 @@ import 'core/router/app_router.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Set orientasi landscape untuk tablet
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.landscapeLeft,
     DeviceOrientation.landscapeRight,
     DeviceOrientation.portraitUp,
   ]);
 
-  // Init locale Indonesia
   await initializeDateFormatting('id_ID', null);
 
   runApp(
@@ -31,6 +29,7 @@ class CoffeePosApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // ✅ appRouterProvider adalah Provider biasa, bukan riverpod generated
     final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(

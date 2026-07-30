@@ -5,8 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_text_field.dart';
@@ -155,7 +153,7 @@ class _ProductFormScreenState
             children: [
 
               // ── BASIC INFO ──────────────────────────
-              _SectionTitle(title: 'Informasi Produk'),
+              const _SectionTitle(title: 'Informasi Produk'),
               const SizedBox(height: AppSizes.sm),
 
               AppTextField(
@@ -188,7 +186,7 @@ class _ProductFormScreenState
                     .where((c) => c.isActive)
                     .toList();
                   return DropdownButtonFormField<int>(
-                    value: _selectedCategoryId,
+                    initialValue: _selectedCategoryId,
                     decoration: const InputDecoration(
                       labelText: 'Kategori',
                     ),
@@ -242,7 +240,7 @@ class _ProductFormScreenState
                   const Spacer(),
                   Switch(
                     value: _isActive,
-                    activeColor: AppColors.primary,
+                    activeThumbColor: AppColors.primary,
                     onChanged: (val) =>
                       setState(() => _isActive = val),
                   ),
@@ -261,7 +259,7 @@ class _ProductFormScreenState
               const SizedBox(height: AppSizes.lg),
               Row(
                 children: [
-                  _SectionTitle(title: 'Varian'),
+                  const _SectionTitle(title: 'Varian'),
                   const Spacer(),
                   TextButton.icon(
                     onPressed: _addVariant,
