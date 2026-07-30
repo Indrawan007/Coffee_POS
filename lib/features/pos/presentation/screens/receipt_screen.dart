@@ -9,6 +9,8 @@ import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
 import '../../data/datasources/transaction_datasource.dart';
+import '../../../settings/presentation/providers/printer_provider.dart';
+import '../../../settings/presentation/providers/settings_provider.dart';
 
 class ReceiptScreen extends ConsumerWidget {
   const ReceiptScreen({super.key, required this.result});
@@ -384,6 +386,68 @@ class _ReceiptRow extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// Ganti tombol Cetak Struk menjadi:
+class _PrintButton extends ConsumerWidget {
+  const _PrintButton({required this.result});
+  final TransactionResult result;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final printerState   = ref.watch(printerNotifierProvider);
+    final settingsAsync  = ref.watch(settingsStreamProvider);
+
+    ref.listen(printerNotifierProvider, (prev, next) {
+      if (next.successMessage != null &&
+          next.successMessage != prev?.successMessage) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.successMessage!),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+      if (next.errorMessage != null &&
+          next.errorMessage != prev?.errorMessage) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.errorMessage!),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    });
+
+    return OutlinedButton.icon(
+      onPressed: printerState.isPrinting
+        ? null
+        : () {
+            final settings = settingsAsync.value;
+            ref
+              .read(printerNotifierProvider.notifier)
+              .printReceipt(
+                transaction: result.transaction,
+                items: result.items,
+                settings: settings,
+              );
+          },
+      icon: printerState.isPrinting
+        ? const SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+            ),
+          )
+        : const Icon(Icons.print),
+      label: Text(
+        printerState.isPrinting
+          ? 'Mencetak...'
+          : 'Cetak Struk',
       ),
     );
   }
