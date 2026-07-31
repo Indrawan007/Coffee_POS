@@ -17,8 +17,16 @@ class CartPanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final cart = ref.watch(cartNotifierProvider);
 
+      // ✅ Responsive width
+      final screenWidth = MediaQuery.of(context).size.width;
+      final cartWidth = screenWidth > 1200
+      ? 360.0
+      : screenWidth > 900
+        ? 300.0
+        : 280.0;
+
     return Container(
-      width: AppSizes.cartWidth,
+      width: cartWidth, 
       color: AppColors.cartBg,
       child: Column(
         children: [
