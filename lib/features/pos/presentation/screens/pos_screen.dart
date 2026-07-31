@@ -49,7 +49,7 @@ class _PosScreenState extends ConsumerState<PosScreen> {
         title: const Text('☕ Kasir'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/dashboard'),
+          onPressed: () => context.pop('/dashboard'),
         ),
         actions: [
           // Cart badge - hanya tampil di mode compact

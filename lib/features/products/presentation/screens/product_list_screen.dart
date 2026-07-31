@@ -23,7 +23,7 @@ class ProductListScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
-            onPressed: () => context.go('/products/add'),
+            onPressed: () => context.pop('/products/add'),
           ),
         ],
       ),
@@ -37,7 +37,7 @@ class ProductListScreen extends ConsumerWidget {
             return EmptyState(
               message: 'Belum ada produk',
               icon: Icons.coffee_outlined,
-              action: () => context.go('/products/add'),
+              action: () => context.push('/products/add'),
               actionLabel: 'Tambah Produk',
             );
           }
@@ -137,7 +137,7 @@ class _ProductCard extends ConsumerWidget {
                 Icons.edit_outlined,
                 color: AppColors.primary,
               ),
-              onPressed: () => context.go(
+              onPressed: () => context.push(
                 '/products/edit/${product.id}',
               ),
             ),

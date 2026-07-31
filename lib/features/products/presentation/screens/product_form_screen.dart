@@ -119,7 +119,7 @@ class _ProductFormScreenState
             ),
           ),
         );
-        context.go('/products');
+        context.pop('/products');
       }
       if (next.errorMessage != null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -139,7 +139,7 @@ class _ProductFormScreenState
         title: Text(isEdit ? 'Edit Produk' : 'Tambah Produk'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/products'),
+          onPressed: () => context.pop('/products'),
         ),
       ),
       body: SingleChildScrollView(

@@ -1,7 +1,7 @@
 import 'package:coffee_pos/features/categories/presentation/providers/category_form_screen.dart';
 import 'package:coffee_pos/features/categories/presentation/providers/category_list_screen.dart';
 import 'package:coffee_pos/features/settings/presentation/providers/printer_settings_screen.dart';
-import 'package:coffee_pos/features/settings/presentation/providers/settings_screen.dart';
+import 'package:coffee_pos/features/settings/presentation/screens/settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';

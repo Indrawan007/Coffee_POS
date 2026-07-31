@@ -26,11 +26,11 @@ class ReceiptScreen extends ConsumerWidget {
     final screenWidth = MediaQuery.of(context).size.width;
     final isWide      = screenWidth >= 600;
 
-    return WillPopScope(
-      // ✅ Intercept back button → pergi ke POS
-      onWillPop: () async {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
         _goToPos(context);
-        return false;
       },
       child: Scaffold(
         backgroundColor: AppColors.background,
@@ -97,7 +97,7 @@ class ReceiptScreen extends ConsumerWidget {
   void _goToPos(BuildContext context) {
     // ✅ Gunakan pushReplacement untuk clear stack
     Navigator.of(context).popUntil((route) => route.isFirst);
-    context.go(AppRoutes.pos);
+    context.push(AppRoutes.pos);
   }
 }
 
@@ -477,7 +477,7 @@ class _ActionButtons extends ConsumerWidget {
             onPressed: () {
               Navigator.of(context)
                 .popUntil((route) => route.isFirst);
-              context.go(AppRoutes.dashboard);
+              context.push(AppRoutes.dashboard);
             },
             icon: const Icon(
               Icons.home_outlined,
@@ -528,7 +528,7 @@ class _ActionButtons extends ConsumerWidget {
                   onPressed: () {
                     Navigator.of(context)
                       .popUntil((route) => route.isFirst);
-                    context.go('/settings/printer');
+                    context.push('/settings/printer');
                   },
                   style: TextButton.styleFrom(
                     minimumSize: Size.zero,
@@ -586,7 +586,7 @@ class _ActionButtons extends ConsumerWidget {
       if (action == 'setup' && context.mounted) {
         Navigator.of(context)
           .popUntil((route) => route.isFirst);
-        context.go('/settings/printer');
+        context.push('/settings/printer');
       }
       return;
     }
@@ -607,7 +607,7 @@ class _ActionButtons extends ConsumerWidget {
     // Pop semua screen sampai root, lalu go ke POS
     Navigator.of(context)
       .popUntil((route) => route.isFirst);
-    context.go(AppRoutes.pos);
+    context.push(AppRoutes.pos);
   }
 }
 

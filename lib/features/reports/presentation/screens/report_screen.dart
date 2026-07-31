@@ -23,7 +23,7 @@ class ReportScreen extends ConsumerWidget {
         title: const Text('Laporan Penjualan'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/dashboard'),
+          onPressed: () => context.pop('/dashboard'),
         ),
       ),
       body: Column(

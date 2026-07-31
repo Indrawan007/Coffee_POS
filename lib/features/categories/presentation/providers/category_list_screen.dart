@@ -22,7 +22,7 @@ class CategoryListScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
-            onPressed: () => context.go('/categories/add'),
+            onPressed: () => context.push('/categories/add'),
           ),
         ],
       ),
@@ -36,7 +36,7 @@ class CategoryListScreen extends ConsumerWidget {
             return EmptyState(
               message: 'Belum ada kategori',
               icon: Icons.category_outlined,
-              action: () => context.go('/categories/add'),
+              action: () => context.push('/categories/add'),
               actionLabel: 'Tambah Kategori',
             );
           }
@@ -117,7 +117,7 @@ class _CategoryCard extends ConsumerWidget {
                 Icons.edit_outlined,
                 color: AppColors.primary,
               ),
-              onPressed: () => context.go(
+              onPressed: () => context.push(
                 '/categories/edit/${category.id}',
               ),
             ),

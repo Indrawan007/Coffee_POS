@@ -71,7 +71,7 @@ class _CategoryFormScreenState
             ),
           ),
         );
-        context.go('/categories');
+        context.pop('/categories');
       }
       if (next.errorMessage != null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -90,7 +90,7 @@ class _CategoryFormScreenState
         title: Text(isEdit ? 'Edit Kategori' : 'Tambah Kategori'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/categories'),
+          onPressed: () => context.pop('/categories'),
         ),
       ),
       body: SingleChildScrollView(

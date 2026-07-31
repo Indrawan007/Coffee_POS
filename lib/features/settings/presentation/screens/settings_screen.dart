@@ -121,7 +121,7 @@ class _SettingsScreenState
         title: const Text('Pengaturan'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/dashboard'),
+          onPressed: () => context.pop('/dashboard'),
         ),
       ),
       body: settingsAsync.when(
@@ -242,7 +242,7 @@ class _SettingsScreenState
                       Icons.chevron_right,
                     ),
                     onTap: () =>
-                      context.go('/settings/printer'),
+                      context.push('/settings/printer'),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(
                         AppSizes.radiusMd,

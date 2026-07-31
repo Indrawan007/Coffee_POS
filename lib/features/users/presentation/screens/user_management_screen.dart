@@ -28,7 +28,7 @@ class UserManagementScreen extends ConsumerWidget {
         // ✅ Tombol kembali
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go(AppRoutes.dashboard),
+          onPressed: () => context.pop(AppRoutes.dashboard),
         ),
         actions: [
           // Tambah user
