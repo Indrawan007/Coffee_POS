@@ -84,10 +84,26 @@ class UserManagementScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
   ) {
-    showDialog(
-      context: context,
-      builder: (_) => const UserFormDialog(),
-    );
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth  = MediaQuery.of(context).size.width;
+    final isSmall      = screenHeight < 700 || screenWidth < 500;
+
+    if (isSmall) {
+      // ✅ HP kecil → full screen
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const UserFormDialog(),
+          fullscreenDialog: true,
+        ),
+      );
+    } else {
+      // ✅ Tablet → dialog
+      showDialog(
+        context: context,
+        builder: (_) => const UserFormDialog(),
+      );
+    }
   }
 }
 
@@ -368,10 +384,24 @@ class _UserCard extends ConsumerWidget {
 
     switch (action) {
       case 'edit':
-        showDialog(
-          context: context,
-          builder: (_) => UserFormDialog(user: user),
-        );
+        final screenHeight = MediaQuery.of(context).size.height;
+        final screenWidth  = MediaQuery.of(context).size.width;
+        final isSmall      = screenHeight < 700 || screenWidth < 500;
+
+        if (isSmall) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => UserFormDialog(user: user),
+              fullscreenDialog: true,
+            ),
+          );
+        } else {
+          showDialog(
+            context: context,
+            builder: (_) => UserFormDialog(user: user),
+          );
+        }
         break;
 
       case 'reset_password':

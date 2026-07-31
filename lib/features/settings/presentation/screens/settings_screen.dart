@@ -121,7 +121,7 @@ class _SettingsScreenState
         title: const Text('Pengaturan'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop('/dashboard'),
+          onPressed: () => context.push('/dashboard'),
         ),
       ),
       body: settingsAsync.when(
