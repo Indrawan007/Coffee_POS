@@ -1,10 +1,9 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../../../core/database/app_database.dart';
 import '../../../../core/utils/printer_service.dart';
 
 part 'printer_provider.g.dart';
 
-// ─── PRINTER STATE ────────────────────────────────
 class PrinterState {
   const PrinterState({
     this.devices = const [],
@@ -16,7 +15,8 @@ class PrinterState {
     this.successMessage,
   });
 
-  final List<BluetoothDevice> devices;
+  // ✅ Ganti BluetoothDevice → BluetoothDeviceModel
+  final List<BluetoothDeviceModel> devices;
   final bool isScanning;
   final bool isConnecting;
   final bool isPrinting;
@@ -27,7 +27,7 @@ class PrinterState {
   bool get isConnected => status.isConnected;
 
   PrinterState copyWith({
-    List<BluetoothDevice>? devices,
+    List<BluetoothDeviceModel>? devices,
     bool? isScanning,
     bool? isConnecting,
     bool? isPrinting,
@@ -53,19 +53,18 @@ class PrinterState {
   }
 }
 
-// ─── PRINTER NOTIFIER ─────────────────────────────
 @riverpod
 class PrinterNotifier extends _$PrinterNotifier {
 
   @override
   PrinterState build() {
-    // Cek status awal
     Future.microtask(_checkStatus);
     return const PrinterState();
   }
 
   Future<void> _checkStatus() async {
-    final connected = await PrinterService.instance.isConnected();
+    final connected =
+      await PrinterService.instance.isConnected();
     state = state.copyWith(
       status: connected
         ? PrinterService.instance.status
@@ -73,15 +72,15 @@ class PrinterNotifier extends _$PrinterNotifier {
     );
   }
 
-  // ─── SCAN ───────────────────────────────────
   Future<void> scan() async {
     state = state.copyWith(
       isScanning: true,
       clearError: true,
     );
-
     try {
-      final devices = await PrinterService.instance.scanDevices();
+      // ✅ Ganti BluetoothDevice → BluetoothDeviceModel
+      final List<BluetoothDeviceModel> devices =
+        await PrinterService.instance.scanDevices();
       state = state.copyWith(
         isScanning: false,
         devices: devices,
@@ -94,39 +93,36 @@ class PrinterNotifier extends _$PrinterNotifier {
     }
   }
 
-  // ─── CONNECT ────────────────────────────────
-  Future<void> connect(BluetoothDevice device) async {
+  // ✅ Ganti BluetoothDevice → BluetoothDeviceModel
+  Future<void> connect(BluetoothDeviceModel device) async {
     state = state.copyWith(
       isConnecting: true,
       clearError: true,
     );
-
     try {
       final success = await PrinterService.instance
         .connect(device);
-
       if (success) {
         state = state.copyWith(
           isConnecting: false,
           status: PrinterService.instance.status,
-          successMessage:
-            'Terhubung ke ${device.name}',
+          successMessage: 'Terhubung ke ${device.name}',
         );
       } else {
         state = state.copyWith(
           isConnecting: false,
-          errorMessage: 'Gagal terhubung ke ${device.name}',
+          errorMessage:
+            'Gagal terhubung ke ${device.name}',
         );
       }
     } catch (e) {
       state = state.copyWith(
         isConnecting: false,
-        errorMessage: 'Error: $e',
+        errorMessage: e.toString(),
       );
     }
   }
 
-  // ─── DISCONNECT ─────────────────────────────
   Future<void> disconnect() async {
     await PrinterService.instance.disconnect();
     state = state.copyWith(
@@ -135,7 +131,6 @@ class PrinterNotifier extends _$PrinterNotifier {
     );
   }
 
-  // ─── TEST PRINT ─────────────────────────────
   Future<void> testPrint({
     required SettingsTableData? settings,
     String paperSize = '58',
@@ -144,7 +139,6 @@ class PrinterNotifier extends _$PrinterNotifier {
       isPrinting: true,
       clearError: true,
     );
-
     try {
       await PrinterService.instance.testPrint(
         settings: settings,
@@ -162,7 +156,6 @@ class PrinterNotifier extends _$PrinterNotifier {
     }
   }
 
-  // ─── PRINT RECEIPT ──────────────────────────
   Future<void> printReceipt({
     required TransactionsTableData transaction,
     required List<TransactionItemsTableData> items,
@@ -173,7 +166,6 @@ class PrinterNotifier extends _$PrinterNotifier {
       isPrinting: true,
       clearError: true,
     );
-
     try {
       await PrinterService.instance.printReceipt(
         transaction: transaction,

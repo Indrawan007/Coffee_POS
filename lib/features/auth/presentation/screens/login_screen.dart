@@ -1,21 +1,22 @@
 import 'package:coffee_pos/core/constant/app_colors.dart';
 import 'package:coffee_pos/core/constant/app_sizes.dart';
 import 'package:coffee_pos/core/constant/app_strings.dart';
-import 'package:coffee_pos/core/router/app_router.dart';
-import 'package:coffee_pos/features/auth/presentation/providers/auth_provider.dart';
-import 'package:coffee_pos/shared/widgets/app_button.dart';
-import 'package:coffee_pos/shared/widgets/app_text_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 
+import '../../../../core/router/app_router.dart';
+import '../../../../shared/widgets/app_button.dart';
+import '../../../../shared/widgets/app_text_field.dart';
+import '../providers/auth_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() =>
+    _LoginScreenState();
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
@@ -42,7 +43,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
 
-    // Listen navigation
     ref.listen(authNotifierProvider, (prev, next) {
       if (next.isAuthenticated) {
         context.go(AppRoutes.dashboard);
@@ -59,7 +59,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             child: Card(
               elevation: 8,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppSizes.radiusXl),
+                borderRadius: BorderRadius.circular(
+                  AppSizes.radiusXl,
+                ),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(AppSizes.xl),
@@ -68,6 +70,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+
                       // Logo
                       Container(
                         width: 80,
@@ -81,12 +84,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         child: const Icon(
                           Icons.coffee,
                           size: 48,
-                          color: AppColors.textOnPrimary,
+                          color: Colors.white,
                         ),
                       ),
                       const SizedBox(height: AppSizes.md),
 
-                      // Title
                       const Text(
                         'Coffee POS',
                         style: TextStyle(
@@ -104,17 +106,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                       const SizedBox(height: AppSizes.xl),
 
-                      // Error message
-                      if (authState.errorMessage != null) ...[
+                      // Error
+                      if (authState.errorMessage != null)
                         Container(
-                          padding: const EdgeInsets.all(AppSizes.sm),
+                          margin: const EdgeInsets.only(
+                            bottom: AppSizes.md,
+                          ),
+                          padding: const EdgeInsets.all(
+                            AppSizes.sm,
+                          ),
                           decoration: BoxDecoration(
-                            color: AppColors.error.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(
-                              AppSizes.radiusSm,
-                            ),
+                            color: AppColors.error
+                              .withOpacity(0.1),
+                            borderRadius:
+                              BorderRadius.circular(
+                                AppSizes.radiusSm,
+                              ),
                             border: Border.all(
-                              color: AppColors.error.withValues(alpha: 0.3),
+                              color: AppColors.error
+                                .withOpacity(0.3),
                             ),
                           ),
                           child: Row(
@@ -124,7 +134,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 color: AppColors.error,
                                 size: 18,
                               ),
-                              const SizedBox(width: AppSizes.sm),
+                              const SizedBox(
+                                width: AppSizes.sm,
+                              ),
                               Expanded(
                                 child: Text(
                                   authState.errorMessage!,
@@ -137,8 +149,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ],
                           ),
                         ),
-                        const SizedBox(height: AppSizes.md),
-                      ],
 
                       // Username
                       AppTextField(
@@ -167,9 +177,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           if (v == null || v.isEmpty) {
                             return 'Password wajib diisi';
                           }
-                          if (v.length < 6) {
-                            return 'Password minimal 6 karakter';
-                          }
                           return null;
                         },
                       ),
@@ -184,9 +191,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
 
                       const SizedBox(height: AppSizes.md),
-                      const Text(
+                      Text(
                         '${AppStrings.appVersion} • Offline Mode',
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: AppColors.textHint,
                           fontSize: 12,
                         ),

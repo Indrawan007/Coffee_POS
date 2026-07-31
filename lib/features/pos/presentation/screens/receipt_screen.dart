@@ -10,7 +10,6 @@ import '../../../../core/utils/date_formatter.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
 import '../../data/datasources/transaction_datasource.dart';
 import '../../../settings/presentation/providers/printer_provider.dart';
-import '../../../settings/presentation/providers/settings_provider.dart';
 
 class ReceiptScreen extends ConsumerWidget {
   const ReceiptScreen({super.key, required this.result});

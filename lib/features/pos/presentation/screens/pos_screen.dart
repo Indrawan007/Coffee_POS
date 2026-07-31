@@ -4,10 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/database/app_database.dart';
-import '../../../../core/utils/currency_formatter.dart';
 import '../../../categories/presentation/providers/category_provider.dart';
-import '../../../products/data/datasources/product_datasource.dart';
 import '../../../products/presentation/providers/product_provider.dart';
 import '../providers/cart_provider.dart';
 import '../widgets/cart_panel.dart';

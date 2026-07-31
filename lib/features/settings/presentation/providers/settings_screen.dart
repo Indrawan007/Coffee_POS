@@ -141,7 +141,7 @@ class _SettingsScreenState
                 children: [
 
                   // ── TOKO ──────────────────────
-                  _SectionHeader(
+                  const _SectionHeader(
                     icon: Icons.store,
                     title: 'Profil Toko',
                   ),
@@ -183,7 +183,7 @@ class _SettingsScreenState
                   const SizedBox(height: AppSizes.lg),
 
                   // ── KEUANGAN ──────────────────
-                  _SectionHeader(
+                  const _SectionHeader(
                     icon: Icons.percent,
                     title: 'Keuangan',
                   ),
@@ -222,7 +222,7 @@ class _SettingsScreenState
                   const SizedBox(height: AppSizes.lg),
 
                   // ── PRINTER ───────────────────
-                  _SectionHeader(
+                  const _SectionHeader(
                     icon: Icons.print,
                     title: 'Printer',
                   ),

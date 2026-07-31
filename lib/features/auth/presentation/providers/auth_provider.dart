@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -18,7 +19,16 @@ AppDatabase appDatabase(Ref ref) {
 // ─── DATASOURCE PROVIDER ─────────────────────────
 @riverpod
 AuthLocalDatasource authDatasource(Ref ref) {
-  return AuthLocalDatasource(ref.watch(appDatabaseProvider));
+  return AuthLocalDatasource(
+    ref.watch(appDatabaseProvider),
+  );
+}
+
+// ─── HAS USERS PROVIDER ───────────────────────────
+// ✅ Cek apakah sudah ada user terdaftar
+@riverpod
+Future<bool> hasUsers(Ref ref) async {
+  return ref.watch(appDatabaseProvider).hasUsers();
 }
 
 // ─── AUTH STATE ───────────────────────────────────
@@ -68,12 +78,12 @@ class AuthNotifier extends _$AuthNotifier {
       final user = await ref
         .read(authDatasourceProvider)
         .getSession();
-
       state = state.copyWith(
         user: user,
         isLoading: false,
       );
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Load session error: $e');
       state = const AuthState();
     }
   }
@@ -86,7 +96,6 @@ class AuthNotifier extends _$AuthNotifier {
       isLoading: true,
       clearError: true,
     );
-
     try {
       final user = await ref
         .read(authDatasourceProvider)
@@ -101,11 +110,42 @@ class AuthNotifier extends _$AuthNotifier {
       }
 
       state = AuthState(user: user);
-
     } catch (e) {
+      debugPrint('Login error: $e');
       state = state.copyWith(
         isLoading: false,
-        errorMessage: 'Terjadi kesalahan. Coba lagi.',
+        errorMessage: 'Terjadi kesalahan: $e',
+      );
+    }
+  }
+
+  // ✅ Register admin pertama kali
+  Future<void> register({
+    required String storeName,
+    required String name,
+    required String username,
+    required String password,
+  }) async {
+    state = state.copyWith(
+      isLoading: true,
+      clearError: true,
+    );
+    try {
+      final user = await ref
+        .read(authDatasourceProvider)
+        .register(
+          storeName: storeName,
+          name: name,
+          username: username,
+          password: password,
+        );
+
+      state = AuthState(user: user);
+    } catch (e) {
+      debugPrint('Register error: $e');
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Gagal mendaftar: $e',
       );
     }
   }

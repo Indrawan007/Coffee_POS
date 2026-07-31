@@ -1,7 +1,5 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../../settings/data/datasources/settings_datasource.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
 import '../../domain/models/cart_item_model.dart';
 import '../../domain/models/cart_state_model.dart';

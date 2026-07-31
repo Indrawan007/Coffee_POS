@@ -5,11 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/database/app_database.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_text_field.dart';
 import '../../../categories/presentation/providers/category_provider.dart';
-import '../../data/datasources/product_datasource.dart';
 import '../providers/product_provider.dart';
 
 class ProductFormScreen extends ConsumerStatefulWidget {

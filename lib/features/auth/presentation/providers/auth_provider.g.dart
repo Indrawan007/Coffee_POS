@@ -40,7 +40,23 @@ final authDatasourceProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AuthDatasourceRef = AutoDisposeProviderRef<AuthLocalDatasource>;
-String _$authNotifierHash() => r'afe95ae547cc1cda218b3961fbac02b3b3e3d248';
+String _$hasUsersHash() => r'46fee355560b890a9bc18f86e80a93f1773f415b';
+
+/// See also [hasUsers].
+@ProviderFor(hasUsers)
+final hasUsersProvider = AutoDisposeFutureProvider<bool>.internal(
+  hasUsers,
+  name: r'hasUsersProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product') ? null : _$hasUsersHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef HasUsersRef = AutoDisposeFutureProviderRef<bool>;
+String _$authNotifierHash() => r'd74d9b022c448e19c9f5b41843829e89e3a083f6';
 
 /// See also [AuthNotifier].
 @ProviderFor(AuthNotifier)

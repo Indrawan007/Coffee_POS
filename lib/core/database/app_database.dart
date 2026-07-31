@@ -1,10 +1,10 @@
 import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
-// ✅ Import HashHelper
 import '../utils/hash_helper.dart';
 
 import 'tables/users_table.dart';
@@ -41,50 +41,43 @@ class AppDatabase extends _$AppDatabase {
     return MigrationStrategy(
       onCreate: (Migrator m) async {
         await m.createAll();
-        await _seedData();
+        // ✅ Hanya seed data non-user
+        await _seedDefaultData();
+      },
+      beforeOpen: (details) async {
+        // Cek apakah settings sudah ada
+        final settings =
+          await select(settingsTable).getSingleOrNull();
+        if (settings == null) {
+          await _seedDefaultData();
+        }
       },
     );
   }
 
-  Future<void> _seedData() async {
+  // ✅ Seed hanya data default (tanpa user)
+  Future<void> _seedDefaultData() async {
     final now = DateTime.now().toIso8601String();
 
-    // Default admin user
-    await into(usersTable).insert(
-      UsersTableCompanion.insert(
-        name: 'Administrator',
-        username: 'admin',
-        // ✅ HashHelper sudah diimport
-        password: HashHelper.hashPassword('admin123'),
-        role: const Value('admin'),
-        createdAt: now,
-        updatedAt: now,
-      ),
-    );
-
-    // Default kasir user
-    await into(usersTable).insert(
-      UsersTableCompanion.insert(
-        name: 'Kasir 1',
-        username: 'kasir',
-        password: HashHelper.hashPassword('kasir123'),
-        role: const Value('cashier'),
-        createdAt: now,
-        updatedAt: now,
-      ),
-    );
-
     // Default settings
-    await into(settingsTable).insert(
-      SettingsTableCompanion.insert(
-        storeName: const Value('Coffee Shop'),
-        storeAddress: const Value('Jl. Contoh No.1'),
-        storePhone: const Value('0812-3456-7890'),
-        taxPercent: const Value(10.0),
-        servicePercent: const Value(5.0),
-        updatedAt: now,
-      ),
-    );
+    final existingSettings =
+      await select(settingsTable).getSingleOrNull();
+    if (existingSettings == null) {
+      await into(settingsTable).insert(
+        SettingsTableCompanion.insert(
+          storeName: const Value('Coffee Shop'),
+          storeAddress: const Value('Jl. Contoh No.1'),
+          storePhone: const Value('0812-3456-7890'),
+          taxPercent: const Value(10.0),
+          servicePercent: const Value(5.0),
+          updatedAt: now,
+        ),
+      );
+    }
+
+    // Cek apakah kategori sudah ada
+    final cats = await select(categoriesTable).get();
+    if (cats.isNotEmpty) return;
 
     // Default categories
     final coffeeId = await into(categoriesTable).insert(
@@ -137,15 +130,10 @@ class AppDatabase extends _$AppDatabase {
           price: const Value(0),
           createdAt: now,
         ),
-        AddonsTableCompanion.insert(
-          name: 'Extra Whip',
-          price: const Value(4000),
-          createdAt: now,
-        ),
       ]);
     });
 
-    // Default products – Coffee
+    // Default products
     final latteId = await into(productsTable).insert(
       ProductsTableCompanion.insert(
         categoryId: coffeeId,
@@ -201,33 +189,7 @@ class AppDatabase extends _$AppDatabase {
       ]);
     });
 
-    final americanoId = await into(productsTable).insert(
-      ProductsTableCompanion.insert(
-        categoryId: coffeeId,
-        name: 'Americano',
-        basePrice: const Value(22000),
-        createdAt: now,
-        updatedAt: now,
-      ),
-    );
-
-    await batch((b) {
-      b.insertAll(productVariantsTable, [
-        ProductVariantsTableCompanion.insert(
-          productId: americanoId,
-          name: 'Hot',
-          priceAdjustment: const Value(0),
-        ),
-        ProductVariantsTableCompanion.insert(
-          productId: americanoId,
-          name: 'Ice',
-          priceAdjustment: const Value(2000),
-        ),
-      ]);
-    });
-
-    // Default products – Non Coffee
-    final matchaId = await into(productsTable).insert(
+    await into(productsTable).insert(
       ProductsTableCompanion.insert(
         categoryId: nonCoffeeId,
         name: 'Matcha Latte',
@@ -237,22 +199,6 @@ class AppDatabase extends _$AppDatabase {
       ),
     );
 
-    await batch((b) {
-      b.insertAll(productVariantsTable, [
-        ProductVariantsTableCompanion.insert(
-          productId: matchaId,
-          name: 'Hot',
-          priceAdjustment: const Value(0),
-        ),
-        ProductVariantsTableCompanion.insert(
-          productId: matchaId,
-          name: 'Ice',
-          priceAdjustment: const Value(2000),
-        ),
-      ]);
-    });
-
-    // Default products – Food
     await into(productsTable).insert(
       ProductsTableCompanion.insert(
         categoryId: foodId,
@@ -262,24 +208,19 @@ class AppDatabase extends _$AppDatabase {
         updatedAt: now,
       ),
     );
+  }
 
-    await into(productsTable).insert(
-      ProductsTableCompanion.insert(
-        categoryId: foodId,
-        name: 'Cheese Cake',
-        basePrice: const Value(25000),
-        createdAt: now,
-        updatedAt: now,
-      ),
-    );
+  // ✅ Method untuk cek apakah sudah ada user
+  Future<bool> hasUsers() async {
+    final users = await select(usersTable).get();
+    return users.isNotEmpty;
   }
 }
 
-// ─── DATABASE CONNECTION ───────────────────────────
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final dbFolder = await getApplicationDocumentsDirectory();
-    final file     = File(p.join(dbFolder.path, 'coffee_pos.db'));
+    final file = File(p.join(dbFolder.path, 'coffee_pos.db'));
     return NativeDatabase.createInBackground(file);
   });
 }

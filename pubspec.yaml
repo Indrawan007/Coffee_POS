@@ -36,8 +36,10 @@ dependencies:
   # UI
   google_fonts: ^6.2.1
 
-  print_bluetooth_thermal: ^1.0.8
   esc_pos_utils_plus: ^2.0.4
+
+  # ✅ Bluetooth - pakai dart native
+  flutter_blue_plus: ^1.35.3
 
 dev_dependencies:
   flutter_test:

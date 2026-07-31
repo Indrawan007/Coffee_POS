@@ -3,12 +3,9 @@ import 'package:coffee_pos/core/constant/app_sizes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/database/app_database.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
-import '../../../pos/data/datasources/transaction_datasource.dart';
 import '../../../pos/presentation/providers/transaction_provider.dart';
 import '../../../settings/presentation/providers/printer_provider.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';

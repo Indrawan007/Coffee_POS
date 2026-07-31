@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
+import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/pos/presentation/screens/pos_screen.dart';
 import '../../features/products/presentation/screens/product_form_screen.dart';
@@ -15,25 +16,52 @@ import '../../features/products/presentation/screens/product_list_screen.dart';
 import '../../features/reports/presentation/screens/report_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final authNotifier = ref.watch(authNotifierProvider);
+  final authState = ref.watch(authNotifierProvider);
+  final hasUsersAsync = ref.watch(hasUsersProvider);
 
   return GoRouter(
     initialLocation: AppRoutes.login,
     refreshListenable: _AuthNotifierListenable(ref),
     redirect: (context, state) {
-      final isLoggedIn  = authNotifier.user != null;
+      final isLoggedIn =
+        authState.user != null;
       final isLoginPage =
         state.matchedLocation == AppRoutes.login;
+      final isRegisterPage =
+        state.matchedLocation == AppRoutes.register;
 
-      if (!isLoggedIn && !isLoginPage) return AppRoutes.login;
-      if (isLoggedIn && isLoginPage)  return AppRoutes.dashboard;
+      // Cek apakah sudah ada user
+      final hasUsers = hasUsersAsync.value ?? true;
+
+      // Jika belum ada user → wajib ke register
+      if (!hasUsers && !isRegisterPage) {
+        return AppRoutes.register;
+      }
+
+      // Jika sudah ada user tapi belum login
+      if (hasUsers && !isLoggedIn && !isLoginPage) {
+        return AppRoutes.login;
+      }
+
+      // Jika sudah login tapi masih di login/register
+      if (isLoggedIn && (isLoginPage || isRegisterPage)) {
+        return AppRoutes.dashboard;
+      }
+
       return null;
     },
     routes: [
+      // ── AUTH ──────────────────────────────
+      GoRoute(
+        path: AppRoutes.register,
+        builder: (_, __) => const RegisterScreen(),
+      ),
       GoRoute(
         path: AppRoutes.login,
         builder: (_, __) => const LoginScreen(),
       ),
+
+      // ── MAIN ──────────────────────────────
       GoRoute(
         path: AppRoutes.dashboard,
         builder: (_, __) => const DashboardScreen(),
@@ -46,16 +74,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.reports,
         builder: (_, __) => const ReportScreen(),
       ),
+
+      // ── SETTINGS ──────────────────────────
       GoRoute(
         path: AppRoutes.settings,
         builder: (_, __) => const SettingsScreen(),
         routes: [
           GoRoute(
             path: 'printer',
-            builder: (_, __) => const PrinterSettingsScreen(),
+            builder: (_, __) =>
+              const PrinterSettingsScreen(),
           ),
         ],
       ),
+
+      // ── PRODUCTS ──────────────────────────
       GoRoute(
         path: AppRoutes.products,
         builder: (_, __) => const ProductListScreen(),
@@ -74,13 +107,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
+
+      // ── CATEGORIES ────────────────────────
       GoRoute(
         path: AppRoutes.categories,
         builder: (_, __) => const CategoryListScreen(),
         routes: [
           GoRoute(
             path: 'add',
-            builder: (_, __) => const CategoryFormScreen(),
+            builder: (_, __) =>
+              const CategoryFormScreen(),
           ),
           GoRoute(
             path: 'edit/:id',
@@ -92,18 +128,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
+
+      // ── USERS ─────────────────────────────
       GoRoute(
         path: AppRoutes.users,
         builder: (_, __) => const Scaffold(
           body: Center(
-            child: Text('User Management – Coming Soon'),
+            child: Text('User Management'),
           ),
         ),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(
       body: Center(
-        child: Text('Route error: ${state.error}'),
+        child: Text('Error: ${state.error}'),
       ),
     ),
   );
@@ -111,6 +149,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
 class AppRoutes {
   AppRoutes._();
+  static const String register   = '/register';
   static const String login      = '/login';
   static const String dashboard  = '/dashboard';
   static const String products   = '/products';
@@ -123,10 +162,12 @@ class AppRoutes {
 
 class _AuthNotifierListenable extends ChangeNotifier {
   _AuthNotifierListenable(this._ref) {
-    _ref.listen(
-      authNotifierProvider,
-      (_, __) => notifyListeners(),
-    );
+    _ref.listen(authNotifierProvider, (_, __) {
+      notifyListeners();
+    });
+    _ref.listen(hasUsersProvider, (_, __) {
+      notifyListeners();
+    });
   }
   final Ref _ref;
 }

@@ -1,20 +1,22 @@
-import 'dart:typed_data';
-import 'package:flutter/material.dart';
-import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
+import 'dart:async';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 
 import '../database/app_database.dart';
 import 'currency_formatter.dart';
 import 'date_formatter.dart';
 
-// ─── MODEL ────────────────────────────────────────
-class BluetoothDevice {
-  const BluetoothDevice({
+// ─── MODELS ───────────────────────────────────────
+class BluetoothDeviceModel {
+  const BluetoothDeviceModel({
     required this.name,
     required this.address,
+    this.device,
   });
+
   final String name;
   final String address;
+  final BluetoothDevice? device;
 }
 
 class PrinterStatus {
@@ -23,6 +25,7 @@ class PrinterStatus {
     this.deviceName,
     this.deviceAddress,
   });
+
   final bool isConnected;
   final String? deviceName;
   final String? deviceAddress;
@@ -38,28 +41,36 @@ class PrinterService {
   static final PrinterService instance = PrinterService._();
 
   PrinterStatus _status = PrinterStatus.disconnected;
+  BluetoothDevice? _connectedDevice;
+  BluetoothCharacteristic? _characteristic;
+
   PrinterStatus get status => _status;
 
-  // ─── SCAN DEVICES ─────────────────────────────
-  Future<List<BluetoothDevice>> scanDevices() async {
+  // ─── SCAN PAIRED DEVICES ──────────────────────
+  Future<List<BluetoothDeviceModel>> scanDevices() async {
     try {
-      final bool btEnabled =
-        await PrintBluetoothThermal.bluetoothEnabled;
+      // Cek bluetooth state
+      final adapterState = await FlutterBluePlus
+        .adapterState
+        .first;
 
-      if (!btEnabled) {
+      if (adapterState != BluetoothAdapterState.on) {
         throw Exception(
           'Bluetooth tidak aktif. '
           'Aktifkan Bluetooth terlebih dahulu.',
         );
       }
 
-      final List<BluetoothInfo> devices =
-        await PrintBluetoothThermal.pairedBluetooths;
+      // Ambil paired/bonded devices
+      final bonded = await FlutterBluePlus.bondedDevices;
 
-      return devices
-        .map((d) => BluetoothDevice(
-          name: d.name,
-          address: d.macAdress,
+      return bonded
+        .map((d) => BluetoothDeviceModel(
+          name: d.platformName.isNotEmpty
+            ? d.platformName
+            : 'Unknown Device',
+          address: d.remoteId.toString(),
+          device: d,
         ))
         .toList();
     } catch (e) {
@@ -68,37 +79,117 @@ class PrinterService {
   }
 
   // ─── CONNECT ──────────────────────────────────
-  Future<bool> connect(BluetoothDevice device) async {
+  Future<bool> connect(BluetoothDeviceModel deviceModel) async {
     try {
-      final bool connected =
-        await PrintBluetoothThermal.connect(
-          macPrinterAddress: device.address,
+      await disconnect();
+
+      final device = deviceModel.device ??
+        BluetoothDevice(
+          remoteId: DeviceIdentifier(deviceModel.address),
         );
 
-      if (connected) {
-        _status = PrinterStatus(
-          isConnected: true,
-          deviceName: device.name,
-          deviceAddress: device.address,
+      // Connect
+      await device.connect(
+        timeout: const Duration(seconds: 10),
+        autoConnect: false,
+      );
+
+      // Discover services
+      final services = await device.discoverServices();
+
+      // Cari characteristic yang bisa write
+      // Printer thermal biasanya pakai service tertentu
+      BluetoothCharacteristic? writeChar;
+
+      for (final service in services) {
+        for (final char in service.characteristics) {
+          if (char.properties.write ||
+              char.properties.writeWithoutResponse) {
+            writeChar = char;
+            break;
+          }
+        }
+        if (writeChar != null) break;
+      }
+
+      if (writeChar == null) {
+        await device.disconnect();
+        throw Exception(
+          'Characteristic printer tidak ditemukan. '
+          'Pastikan device adalah printer thermal.',
         );
       }
 
-      return connected;
+      _connectedDevice = device;
+      _characteristic  = writeChar;
+      _status = PrinterStatus(
+        isConnected: true,
+        deviceName: deviceModel.name,
+        deviceAddress: deviceModel.address,
+      );
+
+      // Listen disconnect
+      device.connectionState.listen((state) {
+        if (state == BluetoothConnectionState.disconnected) {
+          _status = PrinterStatus.disconnected;
+          _connectedDevice = null;
+          _characteristic  = null;
+        }
+      });
+
+      return true;
     } catch (e) {
       _status = PrinterStatus.disconnected;
-      return false;
+      _connectedDevice = null;
+      _characteristic  = null;
+      throw Exception('Gagal connect: $e');
     }
   }
 
   // ─── DISCONNECT ───────────────────────────────
   Future<void> disconnect() async {
-    await PrintBluetoothThermal.disconnect;
+    try {
+      await _connectedDevice?.disconnect();
+    } catch (_) {}
+    _connectedDevice = null;
+    _characteristic  = null;
     _status = PrinterStatus.disconnected;
   }
 
   // ─── CHECK CONNECTION ─────────────────────────
   Future<bool> isConnected() async {
-    return await PrintBluetoothThermal.connectionStatus;
+    if (_connectedDevice == null) return false;
+    final state = await _connectedDevice!
+      .connectionState
+      .first;
+    return state == BluetoothConnectionState.connected;
+  }
+
+  // ─── WRITE BYTES ──────────────────────────────
+  Future<void> _writeBytes(List<int> bytes) async {
+    if (_characteristic == null) {
+      throw Exception('Printer tidak terhubung.');
+    }
+
+    // Kirim dalam chunks karena BLE punya limit MTU
+    const chunkSize = 512;
+    for (var i = 0; i < bytes.length; i += chunkSize) {
+      final end = (i + chunkSize < bytes.length)
+        ? i + chunkSize
+        : bytes.length;
+      final chunk = bytes.sublist(i, end);
+
+      await _characteristic!.write(
+        chunk,
+        withoutResponse:
+          _characteristic!.properties.writeWithoutResponse,
+      );
+
+      // Delay kecil antar chunk
+      await Future.delayed(
+        const Duration(milliseconds: 20),
+      );
+    }
   }
 
   // ─── PRINT RECEIPT ────────────────────────────
@@ -123,7 +214,7 @@ class PrinterService {
       paperSize: paperSize,
     );
 
-    await PrintBluetoothThermal.writeBytes(bytes);
+    await _writeBytes(bytes);
   }
 
   // ─── TEST PRINT ───────────────────────────────
@@ -163,13 +254,13 @@ class PrinterService {
     );
     bytes += generator.hr();
     bytes += generator.text(
-      'Printer berfungsi dengan baik!',
+      'Printer OK! Siap digunakan.',
       styles: const PosStyles(align: PosAlign.center),
     );
-    bytes += generator.feed(2);
+    bytes += generator.feed(3);
     bytes += generator.cut();
 
-    await PrintBluetoothThermal.writeBytes(bytes);
+    await _writeBytes(bytes);
   }
 
   // ─── GENERATE RECEIPT BYTES ───────────────────
@@ -188,9 +279,9 @@ class PrinterService {
 
     List<int> bytes = [];
 
-    // ── HEADER ──────────────────────────────────
     bytes += generator.setGlobalCodeTable('CP1252');
 
+    // ── HEADER ──────────────────────────────────
     bytes += generator.text(
       settings?.storeName ?? 'Coffee Shop',
       styles: const PosStyles(
@@ -216,7 +307,7 @@ class PrinterService {
 
     bytes += generator.hr();
 
-    // ── INVOICE INFO ────────────────────────────
+    // ── INFO ────────────────────────────────────
     bytes += generator.row([
       PosColumn(
         text: 'No',
@@ -259,7 +350,6 @@ class PrinterService {
 
     // ── ITEMS ───────────────────────────────────
     for (final item in items) {
-      // Product name + variant
       final name =
         '${item.productNameSnapshot}'
         '${item.variantNameSnapshot != null
@@ -269,7 +359,6 @@ class PrinterService {
 
       bytes += generator.text(name);
 
-      // Addon
       if (item.addonNamesSnapshot != null) {
         bytes += generator.text(
           '+ ${item.addonNamesSnapshot}',
@@ -279,7 +368,6 @@ class PrinterService {
         );
       }
 
-      // Note
       if (item.note != null) {
         bytes += generator.text(
           'Catatan: ${item.note}',
@@ -289,7 +377,6 @@ class PrinterService {
         );
       }
 
-      // Qty x Price = Total
       bytes += generator.row([
         PosColumn(
           text: '  ${item.qty}x '
@@ -321,12 +408,11 @@ class PrinterService {
 
     if (trx.discountAmount > 0) {
       bytes += generator.row([
+        PosColumn(text: 'Diskon', width: 7),
         PosColumn(
-          text: 'Diskon',
-          width: 7,
-        ),
-        PosColumn(
-          text: '-${CurrencyFormatter.format(trx.discountAmount)}',
+          text: '-${CurrencyFormatter.format(
+            trx.discountAmount,
+          )}',
           width: 5,
           styles: const PosStyles(align: PosAlign.right),
         ),
@@ -354,7 +440,9 @@ class PrinterService {
           width: 7,
         ),
         PosColumn(
-          text: CurrencyFormatter.format(trx.serviceAmount),
+          text: CurrencyFormatter.format(
+            trx.serviceAmount,
+          ),
           width: 5,
           styles: const PosStyles(align: PosAlign.right),
         ),
@@ -363,7 +451,6 @@ class PrinterService {
 
     bytes += generator.hr();
 
-    // TOTAL
     bytes += generator.row([
       PosColumn(
         text: 'TOTAL',
@@ -386,7 +473,6 @@ class PrinterService {
 
     bytes += generator.hr();
 
-    // Payment
     bytes += generator.row([
       PosColumn(
         text: trx.paymentLabel ?? trx.paymentMethod,
@@ -403,7 +489,9 @@ class PrinterService {
       bytes += generator.row([
         PosColumn(text: 'Kembali', width: 7),
         PosColumn(
-          text: CurrencyFormatter.format(trx.changeAmount),
+          text: CurrencyFormatter.format(
+            trx.changeAmount,
+          ),
           width: 5,
           styles: const PosStyles(align: PosAlign.right),
         ),
@@ -412,7 +500,6 @@ class PrinterService {
 
     bytes += generator.hr();
 
-    // ── FOOTER ──────────────────────────────────
     bytes += generator.text(
       settings?.storeFooter ??
         'Terima kasih atas kunjungan Anda!',

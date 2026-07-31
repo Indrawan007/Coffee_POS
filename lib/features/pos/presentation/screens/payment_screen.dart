@@ -404,8 +404,7 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
       10000.0, 20000.0, 50000.0,
       100000.0, 150000.0, 200000.0,
     ];
-    return [total, ...base.where((a) => a >= total)]
-      .toSet()
+    return {total, ...base.where((a) => a >= total)}
       .toList()
       ..sort();
   }

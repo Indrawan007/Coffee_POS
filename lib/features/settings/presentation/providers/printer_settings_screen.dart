@@ -272,7 +272,7 @@ class _DeviceCard extends StatelessWidget {
     required this.onConnect,
   });
 
-  final BluetoothDevice device;
+  final BluetoothDeviceModel device;
   final bool isConnected;
   final bool isConnecting;
   final VoidCallback onConnect;
