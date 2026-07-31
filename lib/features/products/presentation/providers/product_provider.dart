@@ -9,15 +9,18 @@ import '../../data/datasources/product_datasource.dart';
 part 'product_provider.g.dart';
 
 // ─── DATASOURCE PROVIDER ──────────────────────────
-@riverpod
+@Riverpod(keepAlive: true)
 ProductDatasource productDatasource(Ref ref) {
-  return ProductDatasource(ref.watch(appDatabaseProvider));
+  return ProductDatasource(AppDatabase.instance);
 }
 
 // ─── PRODUCTS WITH DETAILS ────────────────────────
 @riverpod
-Future<List<ProductWithDetails>> productsWithDetails(Ref ref) {
-  return ref.watch(productDatasourceProvider).getAllWithDetails();
+Future<List<ProductWithDetails>> productsWithDetails(
+  Ref ref,
+) {
+  return ref.watch(productDatasourceProvider)
+    .getAllWithDetails();
 }
 
 // ─── ACTIVE ADDONS ────────────────────────────────

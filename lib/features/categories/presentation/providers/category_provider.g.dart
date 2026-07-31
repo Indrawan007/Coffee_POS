@@ -7,7 +7,7 @@ part of 'category_provider.dart';
 // **************************************************************************
 
 String _$categoryDatasourceHash() =>
-    r'2f2005519dd791ec1baa2bb40d8a676aa84c6b09';
+    r'50d9272cbf7db44a6d97acb7a6f7a6c29a8d04f9';
 
 /// See also [categoryDatasource].
 @ProviderFor(categoryDatasource)

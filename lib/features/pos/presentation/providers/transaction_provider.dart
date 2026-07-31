@@ -1,3 +1,4 @@
+import 'package:coffee_pos/core/database/app_database.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -9,7 +10,7 @@ part 'transaction_provider.g.dart';
 
 @riverpod
 TransactionDatasource transactionDatasource(Ref ref) {
-  return TransactionDatasource(ref.watch(appDatabaseProvider));
+  return TransactionDatasource(AppDatabase.instance);
 }
 
 // ─── TRANSACTION STATE ────────────────────────────

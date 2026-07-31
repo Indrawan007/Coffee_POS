@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
+import 'core/database/app_database.dart';
 import 'core/router/app_router.dart';
 
 void main() async {
@@ -17,6 +18,10 @@ void main() async {
 
   await initializeDateFormatting('id_ID', null);
 
+  // ✅ Initialize database SEKALI di awal
+  // Ini memastikan DB siap sebelum app render
+  final _ = AppDatabase.instance;
+
   runApp(
     const ProviderScope(
       child: CoffeePosApp(),
@@ -29,7 +34,6 @@ class CoffeePosApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // ✅ appRouterProvider adalah Provider biasa, bukan riverpod generated
     final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(

@@ -6,7 +6,7 @@ import '../../data/datasources/user_datasource.dart';
 
 // ─── DATASOURCE PROVIDER ──────────────────────────
 final userDatasourceProvider = Provider<UserDatasource>((ref) {
-  return UserDatasource(ref.watch(appDatabaseProvider));
+  return UserDatasource(AppDatabase.instance);
 });
 
 // ─── USERS STREAM ─────────────────────────────────

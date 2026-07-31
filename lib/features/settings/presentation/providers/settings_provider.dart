@@ -9,7 +9,7 @@ part 'settings_provider.g.dart';
 
 @riverpod
 SettingsDatasource settingsDatasource(Ref ref) {
-  return SettingsDatasource(ref.watch(appDatabaseProvider));
+  return SettingsDatasource(AppDatabase.instance);
 }
 
 @riverpod

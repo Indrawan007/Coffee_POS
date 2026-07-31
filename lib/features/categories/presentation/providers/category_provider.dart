@@ -11,7 +11,7 @@ part 'category_provider.g.dart';
 // ─── DATASOURCE PROVIDER ──────────────────────────
 @riverpod
 CategoryDatasource categoryDatasource(Ref ref) {
-  return CategoryDatasource(ref.watch(appDatabaseProvider));
+  return CategoryDatasource(AppDatabase.instance);
 }
 
 // ─── STREAMS ──────────────────────────────────────

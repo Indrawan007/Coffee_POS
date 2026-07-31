@@ -8,15 +8,15 @@ import '../../domain/entities/user_entity.dart';
 
 part 'auth_provider.g.dart';
 
-// ─── DB PROVIDER ─────────────────────────────────
+// ✅ DB PROVIDER - gunakan singleton, TIDAK buat baru
 @riverpod
 AppDatabase appDatabase(Ref ref) {
-  final db = AppDatabase();
-  ref.onDispose(db.close);
-  return db;
+  return AppDatabase.instance;
+  // ❌ HAPUS: ref.onDispose(db.close);
+  // Database singleton tidak boleh di-close
 }
 
-// ─── DATASOURCE PROVIDER ─────────────────────────
+// ✅ DATASOURCE - keepAlive agar tidak rebuild
 @riverpod
 AuthLocalDatasource authDatasource(Ref ref) {
   return AuthLocalDatasource(
@@ -24,12 +24,11 @@ AuthLocalDatasource authDatasource(Ref ref) {
   );
 }
 
-// ─── HAS USERS PROVIDER ───────────────────────────
-// ✅ Cek apakah sudah ada user terdaftar
-@riverpod
-Future<bool> hasUsers(Ref ref) async {
-  return ref.watch(appDatabaseProvider).hasUsers();
-}
+// ✅ HAS USERS - cache result
+final hasUsersProvider = FutureProvider<bool>((ref) async {
+  final db = ref.watch(appDatabaseProvider);
+  return db.hasUsers();
+});
 
 // ─── AUTH STATE ───────────────────────────────────
 class AuthState {
@@ -109,11 +108,9 @@ class AuthNotifier extends _$AuthNotifier {
         return;
       }
 
-    // ✅ Invalidate hasUsers
-    ref.invalidate(hasUsersProvider);
+      ref.invalidate(hasUsersProvider);
       state = AuthState(user: user);
     } catch (e) {
-      debugPrint('Login error: $e');
       state = state.copyWith(
         isLoading: false,
         errorMessage: 'Terjadi kesalahan: $e',
@@ -121,7 +118,6 @@ class AuthNotifier extends _$AuthNotifier {
     }
   }
 
-  // ✅ Register admin pertama kali
   Future<void> register({
     required String storeName,
     required String name,
@@ -142,15 +138,12 @@ class AuthNotifier extends _$AuthNotifier {
           password: password,
         );
 
-      // ✅ PENTING: Invalidate hasUsers SEBELUM set state
       ref.invalidate(hasUsersProvider);
-
-      // Tunggu sebentar agar provider sempat rebuild
-      await Future.delayed(const Duration(milliseconds: 100));
-
+      await Future.delayed(
+        const Duration(milliseconds: 100),
+      );
       state = AuthState(user: user);
     } catch (e) {
-      debugPrint('Register error: $e');
       state = state.copyWith(
         isLoading: false,
         errorMessage: 'Gagal mendaftar: $e',

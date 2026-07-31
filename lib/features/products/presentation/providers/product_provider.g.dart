@@ -6,12 +6,11 @@ part of 'product_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$productDatasourceHash() => r'6030912b8f753ed7ac55e2d836caedb4ad5b023d';
+String _$productDatasourceHash() => r'fa51252d162239fa3ce55689d482abd145e36800';
 
 /// See also [productDatasource].
 @ProviderFor(productDatasource)
-final productDatasourceProvider =
-    AutoDisposeProvider<ProductDatasource>.internal(
+final productDatasourceProvider = Provider<ProductDatasource>.internal(
   productDatasource,
   name: r'productDatasourceProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
@@ -23,7 +22,7 @@ final productDatasourceProvider =
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-typedef ProductDatasourceRef = AutoDisposeProviderRef<ProductDatasource>;
+typedef ProductDatasourceRef = ProviderRef<ProductDatasource>;
 String _$productsWithDetailsHash() =>
     r'd6b56ff6a05d00f97128f5718e5f7bad82494f81';
 
