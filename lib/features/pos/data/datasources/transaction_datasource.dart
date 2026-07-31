@@ -153,13 +153,13 @@ class TransactionDatasource {
     }
 
     return {
-      'total_revenue'  : totalRevenue,
-      'total_cash'     : totalCash,
-      'total_non_cash' : totalNonCash,
-      'total_trx'      : totalTrx,
-      'avg_trx'        : totalTrx > 0
+      'total_revenue'  : totalRevenue,        // double
+      'total_cash'     : totalCash,           // double
+      'total_non_cash' : totalNonCash,        // double
+      'total_trx'      : totalTrx,            // int
+      'avg_trx'        : totalTrx > 0         // double
         ? totalRevenue / totalTrx
-        : 0,
+        : 0.0,
     };
   }
 
