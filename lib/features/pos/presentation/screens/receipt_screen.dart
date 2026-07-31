@@ -95,7 +95,6 @@ class ReceiptScreen extends ConsumerWidget {
   }
 
   void _goToPos(BuildContext context) {
-    // ✅ Gunakan pushReplacement untuk clear stack
     Navigator.of(context).popUntil((route) => route.isFirst);
     context.push(AppRoutes.pos);
   }
@@ -477,7 +476,6 @@ class _ActionButtons extends ConsumerWidget {
             onPressed: () {
               Navigator.of(context)
                 .popUntil((route) => route.isFirst);
-              context.push(AppRoutes.dashboard);
             },
             icon: const Icon(
               Icons.home_outlined,
@@ -526,8 +524,7 @@ class _ActionButtons extends ConsumerWidget {
                 ),
                 TextButton(
                   onPressed: () {
-                    Navigator.of(context)
-                      .popUntil((route) => route.isFirst);
+                    Navigator.of(context).popUntil((route) => route.isFirst);
                     context.push('/settings/printer');
                   },
                   style: TextButton.styleFrom(
@@ -604,9 +601,7 @@ class _ActionButtons extends ConsumerWidget {
 
   // ✅ NEW TRANSACTION FUNCTION
   void _goToNewTransaction(BuildContext context) {
-    // Pop semua screen sampai root, lalu go ke POS
-    Navigator.of(context)
-      .popUntil((route) => route.isFirst);
+    Navigator.of(context).popUntil((route) => route.isFirst);
     context.push(AppRoutes.pos);
   }
 }

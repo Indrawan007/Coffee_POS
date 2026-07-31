@@ -109,6 +109,8 @@ class AuthNotifier extends _$AuthNotifier {
         return;
       }
 
+    // ✅ Invalidate hasUsers
+    ref.invalidate(hasUsersProvider);
       state = AuthState(user: user);
     } catch (e) {
       debugPrint('Login error: $e');
@@ -139,6 +141,12 @@ class AuthNotifier extends _$AuthNotifier {
           username: username,
           password: password,
         );
+
+      // ✅ PENTING: Invalidate hasUsers SEBELUM set state
+      ref.invalidate(hasUsersProvider);
+
+      // Tunggu sebentar agar provider sempat rebuild
+      await Future.delayed(const Duration(milliseconds: 100));
 
       state = AuthState(user: user);
     } catch (e) {
