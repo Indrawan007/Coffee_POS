@@ -14,6 +14,7 @@ import '../../features/pos/presentation/screens/pos_screen.dart';
 import '../../features/products/presentation/screens/product_form_screen.dart';
 import '../../features/products/presentation/screens/product_list_screen.dart';
 import '../../features/reports/presentation/screens/report_screen.dart';
+import '../../features/users/presentation/screens/user_management_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authNotifierProvider);
@@ -137,6 +138,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             child: Text('User Management'),
           ),
         ),
+      ),
+      GoRoute(
+        path: AppRoutes.users,
+        builder: (_, __) => const UserManagementScreen(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(
