@@ -93,15 +93,20 @@ class _PaymentScreenState
     // Listen transaction result
     ref.listen(transactionNotifierProvider, (prev, next) {
       if (next.isSuccess && next.result != null) {
+        // Clear cart
         ref.read(cartNotifierProvider.notifier).clearCart();
-        ref.read(transactionNotifierProvider.notifier)
-          .reset();
 
+        // ✅ Reset transaction state
+        final savedResult = next.result!;
+        ref.read(transactionNotifierProvider.notifier).reset();
+
+        // ✅ Navigate ke receipt - pushReplacement
+        // agar tidak bisa back ke payment
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (_) => ReceiptScreen(
-              result: next.result!,
+              result: savedResult,
             ),
           ),
         );
