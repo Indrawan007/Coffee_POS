@@ -23,7 +23,7 @@ class ProductListScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
-            onPressed: () => context.pop('/products/add'),
+            onPressed: () => context.push('/products/add'),
           ),
         ],
       ),
