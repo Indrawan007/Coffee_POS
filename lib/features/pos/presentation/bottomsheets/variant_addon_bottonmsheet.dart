@@ -3,6 +3,7 @@ import 'package:coffee_pos/core/constant/app_sizes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+
 import '../../../../core/database/app_database.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../products/data/datasources/product_datasource.dart';
@@ -11,7 +12,10 @@ import '../../domain/models/cart_item_model.dart';
 import '../providers/cart_provider.dart';
 
 class VariantAddonBottomSheet extends ConsumerStatefulWidget {
-  const VariantAddonBottomSheet({super.key, required this.item});
+  const VariantAddonBottomSheet({
+    super.key,
+    required this.item,
+  });
   final ProductWithDetails item;
 
   @override
@@ -23,16 +27,14 @@ class _VariantAddonBottomSheetState
     extends ConsumerState<VariantAddonBottomSheet> {
 
   ProductVariantsTableData? _selectedVariant;
-  final Set<int>    _selectedAddonIds   = {};
+  final Set<int> _selectedAddonIds    = {};
   final Map<int, AddonsTableData> _addonMap = {};
   int    _qty  = 1;
-  String _note = '';
   final _noteCtrl = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    // Default pilih varian pertama
     if (widget.item.variants.isNotEmpty) {
       _selectedVariant = widget.item.variants.first;
     }
@@ -42,15 +44,6 @@ class _VariantAddonBottomSheetState
   void dispose() {
     _noteCtrl.dispose();
     super.dispose();
-  }
-
-  double get _totalPrice {
-    final base    = widget.item.product.basePrice;
-    final variant = _selectedVariant?.priceAdjustment ?? 0;
-    final addons  = _addonMap.entries
-      .where((e) => _selectedAddonIds.contains(e.key))
-      .fold(0.0, (sum, e) => sum + e.value.price);
-    return (base + variant + addons) * _qty;
   }
 
   double get _unitPrice {
@@ -64,6 +57,10 @@ class _VariantAddonBottomSheetState
       .fold(0.0, (sum, e) => sum + e.value.price);
   }
 
+  double get _totalPrice {
+    return (_unitPrice + _addonPrice) * _qty;
+  }
+
   void _addToCart() {
     final selectedAddons = _addonMap.entries
       .where((e) => _selectedAddonIds.contains(e.key))
@@ -74,8 +71,10 @@ class _VariantAddonBottomSheetState
       productName: widget.item.product.name,
       variantId: _selectedVariant?.id,
       variantName: _selectedVariant?.name ?? '',
-      addonIds: selectedAddons.map((e) => e.key).toList(),
-      addonNames: selectedAddons.map((e) => e.value.name).toList(),
+      addonIds: selectedAddons
+        .map((e) => e.key).toList(),
+      addonNames: selectedAddons
+        .map((e) => e.value.name).toList(),
       addonPrice: _addonPrice,
       unitPrice: _unitPrice,
       qty: _qty,
@@ -96,9 +95,14 @@ class _VariantAddonBottomSheetState
 
   @override
   Widget build(BuildContext context) {
-    final addonsAsync = ref.watch(activeAddonsProvider);
-    final product     = widget.item.product;
-    final variants    = widget.item.variants;
+    final product  = widget.item.product;
+    final variants = widget.item.variants;
+    final categoryId = product.categoryId;
+
+    // ✅ Ambil addon berdasarkan KATEGORI produk
+    final addonsAsync = ref.watch(
+      addonsByCategoryProvider(categoryId),
+    );
 
     return DraggableScrollableSheet(
       initialChildSize: 0.75,
@@ -115,7 +119,9 @@ class _VariantAddonBottomSheetState
           children: [
             // Handle
             Container(
-              margin: const EdgeInsets.only(top: AppSizes.sm),
+              margin: const EdgeInsets.only(
+                top: AppSizes.sm,
+              ),
               width: 40,
               height: 4,
               decoration: BoxDecoration(
@@ -130,7 +136,7 @@ class _VariantAddonBottomSheetState
                 controller: scrollCtrl,
                 padding: const EdgeInsets.all(AppSizes.md),
                 children: [
-                  // Header
+                  // ── HEADER ──────────────────
                   Row(
                     children: [
                       Expanded(
@@ -143,6 +149,14 @@ class _VariantAddonBottomSheetState
                               style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              widget.item.category.name,
+                              style: const TextStyle(
+                                color:
+                                  AppColors.textSecondary,
+                                fontSize: 13,
                               ),
                             ),
                             Text(
@@ -160,14 +174,15 @@ class _VariantAddonBottomSheetState
                       ),
                       IconButton(
                         icon: const Icon(Icons.close),
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () =>
+                          Navigator.pop(context),
                       ),
                     ],
                   ),
 
                   const Divider(height: AppSizes.lg),
 
-                  // ── VARIAN ──────────────────────
+                  // ── VARIAN ──────────────────
                   if (variants.isNotEmpty) ...[
                     const Text(
                       'Pilih Size / Varian',
@@ -191,8 +206,8 @@ class _VariantAddonBottomSheetState
                             }',
                           ),
                           selected: isSelected,
-                          selectedColor:
-                            AppColors.primary.withOpacity(0.2),
+                          selectedColor: AppColors.primary
+                            .withOpacity(0.2),
                           onSelected: (_) => setState(
                             () => _selectedVariant = v,
                           ),
@@ -202,12 +217,19 @@ class _VariantAddonBottomSheetState
                     const SizedBox(height: AppSizes.md),
                   ],
 
-                  // ── ADD-ON ──────────────────────
+                  // ── ADD-ON ──────────────────
+                  // ✅ Hanya tampil jika kategori punya addon
                   addonsAsync.when(
                     loading: () =>
                       const CircularProgressIndicator(),
-                    error: (e, _) => const SizedBox.shrink(),
+                    error: (e, _) =>
+                      const SizedBox.shrink(),
                     data: (addons) {
+                      // ✅ Jika tidak ada addon → tidak tampil
+                      if (addons.isEmpty) {
+                        return const SizedBox.shrink();
+                      }
+
                       // Simpan ke map
                       for (final a in addons) {
                         _addonMap[a.id] = a;
@@ -224,36 +246,47 @@ class _VariantAddonBottomSheetState
                               fontSize: 15,
                             ),
                           ),
-                          const SizedBox(height: AppSizes.sm),
-                          ...addons.map((a) => CheckboxListTile(
-                            dense: true,
-                            title: Text(a.name),
-                            subtitle: a.price > 0
-                              ? Text(
-                                  '+${CurrencyFormatter.format(a.price)}',
-                                  style: const TextStyle(
-                                    color: AppColors.primary,
-                                  ),
-                                )
-                              : null,
-                            value: _selectedAddonIds
-                              .contains(a.id),
-                            activeColor: AppColors.primary,
-                            onChanged: (val) => setState(() {
-                              if (val == true) {
-                                _selectedAddonIds.add(a.id);
-                              } else {
-                                _selectedAddonIds.remove(a.id);
-                              }
-                            }),
-                          )),
-                          const SizedBox(height: AppSizes.md),
+                          const SizedBox(
+                            height: AppSizes.sm,
+                          ),
+                          ...addons.map((a) =>
+                            CheckboxListTile(
+                              dense: true,
+                              title: Text(a.name),
+                              subtitle: a.price > 0
+                                ? Text(
+                                    '+${CurrencyFormatter.format(a.price)}',
+                                    style: const TextStyle(
+                                      color: AppColors
+                                        .primary,
+                                    ),
+                                  )
+                                : null,
+                              value: _selectedAddonIds
+                                .contains(a.id),
+                              activeColor:
+                                AppColors.primary,
+                              onChanged: (val) =>
+                                setState(() {
+                                  if (val == true) {
+                                    _selectedAddonIds
+                                      .add(a.id);
+                                  } else {
+                                    _selectedAddonIds
+                                      .remove(a.id);
+                                  }
+                                }),
+                            ),
+                          ),
+                          const SizedBox(
+                            height: AppSizes.md,
+                          ),
                         ],
                       );
                     },
                   ),
 
-                  // ── CATATAN ─────────────────────
+                  // ── CATATAN ─────────────────
                   const Text(
                     'Catatan (opsional)',
                     style: TextStyle(
@@ -266,14 +299,13 @@ class _VariantAddonBottomSheetState
                     controller: _noteCtrl,
                     maxLines: 2,
                     decoration: const InputDecoration(
-                      hintText: 'Contoh: less ice, no whip...',
+                      hintText:
+                        'Contoh: less ice, no whip...',
                     ),
-                    onChanged: (v) =>
-                      setState(() => _note = v),
                   ),
                   const SizedBox(height: AppSizes.lg),
 
-                  // ── QTY ─────────────────────────
+                  // ── QTY ─────────────────────
                   Row(
                     mainAxisAlignment:
                       MainAxisAlignment.center,
@@ -289,9 +321,10 @@ class _VariantAddonBottomSheetState
                         color: AppColors.primary,
                       ),
                       Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSizes.lg,
-                        ),
+                        padding:
+                          const EdgeInsets.symmetric(
+                            horizontal: AppSizes.lg,
+                          ),
                         child: Text(
                           '$_qty',
                           style: const TextStyle(
@@ -315,7 +348,7 @@ class _VariantAddonBottomSheetState
               ),
             ),
 
-            // ── BOTTOM: Harga + Tambah ───────────
+            // ── BOTTOM BAR ──────────────────
             Container(
               padding: const EdgeInsets.all(AppSizes.md),
               decoration: BoxDecoration(
@@ -343,7 +376,9 @@ class _VariantAddonBottomSheetState
                           ),
                         ),
                         Text(
-                          CurrencyFormatter.format(_totalPrice),
+                          CurrencyFormatter.format(
+                            _totalPrice,
+                          ),
                           style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -356,12 +391,18 @@ class _VariantAddonBottomSheetState
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: _addToCart,
-                        icon: const Icon(Icons.add_shopping_cart),
-                        label: const Text('Tambah ke Pesanan'),
+                        icon: const Icon(
+                          Icons.add_shopping_cart,
+                        ),
+                        label: const Text(
+                          'Tambah ke Pesanan',
+                        ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
+                          backgroundColor:
+                            AppColors.primary,
                           minimumSize: const Size(
-                            double.infinity, 52,
+                            double.infinity,
+                            52,
                           ),
                         ),
                       ),

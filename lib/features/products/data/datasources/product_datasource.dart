@@ -74,8 +74,23 @@ class ProductDatasource {
     );
   }
 
-  // Watch by category
-  Stream<List<ProductsTableData>> watchByCategory(int categoryId) {
+  // ✅ TAMBAH: Get addons berdasarkan categoryId produk
+  Future<List<AddonsTableData>> getAddonsByCategory(
+    int categoryId,
+  ) async {
+    return _db.getAddonsByCategory(categoryId);
+  }
+
+  // ✅ TAMBAH: Get semua addons (untuk fallback)
+  Future<List<AddonsTableData>> getActiveAddons() {
+    return (_db.select(_db.addonsTable)
+      ..where((a) => a.isActive.equals(true))
+    ).get();
+  }
+
+  Stream<List<ProductsTableData>> watchByCategory(
+    int categoryId,
+  ) {
     return (_db.select(_db.productsTable)
       ..where((p) =>
         p.categoryId.equals(categoryId) &
@@ -85,24 +100,20 @@ class ProductDatasource {
     ).watch();
   }
 
-  // Insert
   Future<int> insert(ProductsTableCompanion data) {
     return _db.into(_db.productsTable).insert(data);
   }
 
-  // Update
   Future<bool> update(ProductsTableCompanion data) {
     return _db.update(_db.productsTable).replace(data);
   }
 
-  // Delete variants
   Future<void> deleteVariants(int productId) {
     return (_db.delete(_db.productVariantsTable)
       ..where((v) => v.productId.equals(productId))
     ).go();
   }
 
-  // Insert variants
   Future<void> insertVariants(
     List<ProductVariantsTableCompanion> variants,
   ) async {
@@ -111,7 +122,6 @@ class ProductDatasource {
     });
   }
 
-  // Toggle active
   Future<void> toggleActive(int id, bool isActive) async {
     final now = DateTime.now().toIso8601String();
     await (_db.update(_db.productsTable)
@@ -124,7 +134,6 @@ class ProductDatasource {
     );
   }
 
-  // Delete
   Future<void> delete(int id) async {
     await deleteVariants(id);
     await (_db.delete(_db.productsTable)
@@ -132,18 +141,12 @@ class ProductDatasource {
     ).go();
   }
 
-  // Get variants
-  Future<List<ProductVariantsTableData>> getVariants(int productId) {
+  Future<List<ProductVariantsTableData>> getVariants(
+    int productId,
+  ) {
     return (_db.select(_db.productVariantsTable)
       ..where((v) => v.productId.equals(productId))
       ..where((v) => v.isActive.equals(true))
-    ).get();
-  }
-
-  // Get addons
-  Future<List<AddonsTableData>> getActiveAddons() {
-    return (_db.select(_db.addonsTable)
-      ..where((a) => a.isActive.equals(true))
     ).get();
   }
 }

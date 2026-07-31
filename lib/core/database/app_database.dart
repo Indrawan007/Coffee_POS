@@ -12,6 +12,8 @@ import 'tables/categories_table.dart';
 import 'tables/products_table.dart';
 import 'tables/product_variants_table.dart';
 import 'tables/addons_table.dart';
+// ✅ Tambah import
+import 'tables/category_addons_table.dart';
 import 'tables/transactions_table.dart';
 import 'tables/transaction_items_table.dart';
 import 'tables/settings_table.dart';
@@ -25,6 +27,8 @@ part 'app_database.g.dart';
     ProductsTable,
     ProductVariantsTable,
     AddonsTable,
+    // ✅ Tambah tabel baru
+    CategoryAddonsTable,
     TransactionsTable,
     TransactionItemsTable,
     SettingsTable,
@@ -33,33 +37,186 @@ part 'app_database.g.dart';
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
+  // ✅ Update schema version
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration {
     return MigrationStrategy(
       onCreate: (Migrator m) async {
         await m.createAll();
-        // ✅ Hanya seed data non-user
         await _seedDefaultData();
       },
+      onUpgrade: (Migrator m, int from, int to) async {
+        if (from < 2) {
+          // ✅ Buat tabel baru saat upgrade
+          await m.createTable(categoryAddonsTable);
+          // Seed relasi addon-kategori
+          await _seedCategoryAddons();
+        }
+      },
       beforeOpen: (details) async {
-        // Cek apakah settings sudah ada
         final settings =
           await select(settingsTable).getSingleOrNull();
         if (settings == null) {
           await _seedDefaultData();
         }
+
+        // Cek apakah category_addons sudah ada datanya
+        final catAddons =
+          await select(categoryAddonsTable).get();
+        if (catAddons.isEmpty) {
+          await _seedCategoryAddons();
+        }
       },
     );
   }
 
-  // ✅ Seed hanya data default (tanpa user)
+  // ✅ Seed relasi kategori-addon
+  Future<void> _seedCategoryAddons() async {
+    // Ambil semua kategori dan addon
+    final cats   = await select(categoriesTable).get();
+    final addons = await select(addonsTable).get();
+
+    if (cats.isEmpty || addons.isEmpty) return;
+
+    // Cari ID kategori
+    int? coffeeId;
+    int? nonCoffeeId;
+
+    for (final cat in cats) {
+      final nameLower = cat.name.toLowerCase();
+      if (nameLower == 'coffee') coffeeId = cat.id;
+      if (nameLower == 'non coffee') nonCoffeeId = cat.id;
+    }
+
+    // Cari ID addon
+    final Map<String, int> addonMap = {};
+    for (final addon in addons) {
+      addonMap[addon.name.toLowerCase()] = addon.id;
+    }
+
+    final extraShotId =
+      addonMap['extra shot'];
+    final extraMilkId =
+      addonMap['extra milk'];
+    final lessSugarId =
+      addonMap['less sugar'];
+    final noSugarId =
+      addonMap['no sugar'];
+
+    final companions = <CategoryAddonsTableCompanion>[];
+
+    // Coffee → semua addon minuman
+    if (coffeeId != null) {
+      if (extraShotId != null) {
+        companions.add(
+          CategoryAddonsTableCompanion.insert(
+            categoryId: coffeeId,
+            addonId: extraShotId,
+          ),
+        );
+      }
+      if (extraMilkId != null) {
+        companions.add(
+          CategoryAddonsTableCompanion.insert(
+            categoryId: coffeeId,
+            addonId: extraMilkId,
+          ),
+        );
+      }
+      if (lessSugarId != null) {
+        companions.add(
+          CategoryAddonsTableCompanion.insert(
+            categoryId: coffeeId,
+            addonId: lessSugarId,
+          ),
+        );
+      }
+      if (noSugarId != null) {
+        companions.add(
+          CategoryAddonsTableCompanion.insert(
+            categoryId: coffeeId,
+            addonId: noSugarId,
+          ),
+        );
+      }
+    }
+
+    // Non Coffee → addon tanpa extra shot
+    if (nonCoffeeId != null) {
+      if (extraMilkId != null) {
+        companions.add(
+          CategoryAddonsTableCompanion.insert(
+            categoryId: nonCoffeeId,
+            addonId: extraMilkId,
+          ),
+        );
+      }
+      if (lessSugarId != null) {
+        companions.add(
+          CategoryAddonsTableCompanion.insert(
+            categoryId: nonCoffeeId,
+            addonId: lessSugarId,
+          ),
+        );
+      }
+      if (noSugarId != null) {
+        companions.add(
+          CategoryAddonsTableCompanion.insert(
+            categoryId: nonCoffeeId,
+            addonId: noSugarId,
+          ),
+        );
+      }
+    }
+
+    // Food → TIDAK ADA addon
+
+    if (companions.isNotEmpty) {
+      await batch((b) {
+        b.insertAll(categoryAddonsTable, companions);
+      });
+    }
+
+    debugPrint(
+      'Seeded ${companions.length} category-addon relations',
+    );
+  }
+
+  // ✅ Method ambil addon berdasarkan kategori
+  Future<List<AddonsTableData>> getAddonsByCategory(
+    int categoryId,
+  ) async {
+    final query = select(addonsTable).join([
+      innerJoin(
+        categoryAddonsTable,
+        categoryAddonsTable.addonId
+          .equalsExp(addonsTable.id),
+      ),
+    ])
+      ..where(
+        categoryAddonsTable.categoryId.equals(categoryId) &
+        addonsTable.isActive.equals(true),
+      );
+
+    final rows = await query.get();
+    return rows.map((row) =>
+      row.readTable(addonsTable),
+    ).toList();
+  }
+
+  // ✅ Method cek apakah ada user
+  Future<bool> hasUsers() async {
+    final users = await select(usersTable).get();
+    return users.isNotEmpty;
+  }
+
+  // Seed default data (sama seperti sebelumnya)
   Future<void> _seedDefaultData() async {
     final now = DateTime.now().toIso8601String();
 
-    // Default settings
     final existingSettings =
       await select(settingsTable).getSingleOrNull();
     if (existingSettings == null) {
@@ -75,11 +232,9 @@ class AppDatabase extends _$AppDatabase {
       );
     }
 
-    // Cek apakah kategori sudah ada
     final cats = await select(categoriesTable).get();
     if (cats.isNotEmpty) return;
 
-    // Default categories
     final coffeeId = await into(categoriesTable).insert(
       CategoriesTableCompanion.insert(
         name: 'Coffee',
@@ -107,7 +262,6 @@ class AppDatabase extends _$AppDatabase {
       ),
     );
 
-    // Default addons
     await batch((b) {
       b.insertAll(addonsTable, [
         AddonsTableCompanion.insert(
@@ -133,7 +287,6 @@ class AppDatabase extends _$AppDatabase {
       ]);
     });
 
-    // Default products
     final latteId = await into(productsTable).insert(
       ProductsTableCompanion.insert(
         categoryId: coffeeId,
@@ -208,12 +361,9 @@ class AppDatabase extends _$AppDatabase {
         updatedAt: now,
       ),
     );
-  }
 
-  // ✅ Method untuk cek apakah sudah ada user
-  Future<bool> hasUsers() async {
-    final users = await select(usersTable).get();
-    return users.isNotEmpty;
+    // Seed category addons setelah data ada
+    await _seedCategoryAddons();
   }
 }
 

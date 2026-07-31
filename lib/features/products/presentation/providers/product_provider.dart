@@ -163,3 +163,16 @@ class ProductFormNotifier extends _$ProductFormNotifier {
     await ref.read(productDatasourceProvider).delete(id);
   }
 }
+
+// ✅ TAMBAH: Provider addon berdasarkan kategori
+final addonsByCategoryProvider =
+    FutureProvider.family<List<AddonsTableData>, int>(
+  (ref, categoryId) async {
+    final ds = ref.watch(productDatasourceProvider);
+    final addons = await ds.getAddonsByCategory(categoryId);
+
+    // Jika tidak ada relasi, return kosong
+    // (bukan return semua addon)
+    return addons;
+  },
+);

@@ -1838,6 +1838,236 @@ class AddonsTableCompanion extends UpdateCompanion<AddonsTableData> {
   }
 }
 
+class $CategoryAddonsTableTable extends CategoryAddonsTable
+    with TableInfo<$CategoryAddonsTableTable, CategoryAddonsTableData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CategoryAddonsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _categoryIdMeta =
+      const VerificationMeta('categoryId');
+  @override
+  late final GeneratedColumn<int> categoryId = GeneratedColumn<int>(
+      'category_id', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: true,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES categories (id)'));
+  static const VerificationMeta _addonIdMeta =
+      const VerificationMeta('addonId');
+  @override
+  late final GeneratedColumn<int> addonId = GeneratedColumn<int>(
+      'addon_id', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: true,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('REFERENCES addons (id)'));
+  @override
+  List<GeneratedColumn> get $columns => [id, categoryId, addonId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'category_addons';
+  @override
+  VerificationContext validateIntegrity(
+      Insertable<CategoryAddonsTableData> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('category_id')) {
+      context.handle(
+          _categoryIdMeta,
+          categoryId.isAcceptableOrUnknown(
+              data['category_id']!, _categoryIdMeta));
+    } else if (isInserting) {
+      context.missing(_categoryIdMeta);
+    }
+    if (data.containsKey('addon_id')) {
+      context.handle(_addonIdMeta,
+          addonId.isAcceptableOrUnknown(data['addon_id']!, _addonIdMeta));
+    } else if (isInserting) {
+      context.missing(_addonIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CategoryAddonsTableData map(Map<String, dynamic> data,
+      {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CategoryAddonsTableData(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      categoryId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}category_id'])!,
+      addonId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}addon_id'])!,
+    );
+  }
+
+  @override
+  $CategoryAddonsTableTable createAlias(String alias) {
+    return $CategoryAddonsTableTable(attachedDatabase, alias);
+  }
+}
+
+class CategoryAddonsTableData extends DataClass
+    implements Insertable<CategoryAddonsTableData> {
+  final int id;
+  final int categoryId;
+  final int addonId;
+  const CategoryAddonsTableData(
+      {required this.id, required this.categoryId, required this.addonId});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['category_id'] = Variable<int>(categoryId);
+    map['addon_id'] = Variable<int>(addonId);
+    return map;
+  }
+
+  CategoryAddonsTableCompanion toCompanion(bool nullToAbsent) {
+    return CategoryAddonsTableCompanion(
+      id: Value(id),
+      categoryId: Value(categoryId),
+      addonId: Value(addonId),
+    );
+  }
+
+  factory CategoryAddonsTableData.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CategoryAddonsTableData(
+      id: serializer.fromJson<int>(json['id']),
+      categoryId: serializer.fromJson<int>(json['categoryId']),
+      addonId: serializer.fromJson<int>(json['addonId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'categoryId': serializer.toJson<int>(categoryId),
+      'addonId': serializer.toJson<int>(addonId),
+    };
+  }
+
+  CategoryAddonsTableData copyWith({int? id, int? categoryId, int? addonId}) =>
+      CategoryAddonsTableData(
+        id: id ?? this.id,
+        categoryId: categoryId ?? this.categoryId,
+        addonId: addonId ?? this.addonId,
+      );
+  CategoryAddonsTableData copyWithCompanion(CategoryAddonsTableCompanion data) {
+    return CategoryAddonsTableData(
+      id: data.id.present ? data.id.value : this.id,
+      categoryId:
+          data.categoryId.present ? data.categoryId.value : this.categoryId,
+      addonId: data.addonId.present ? data.addonId.value : this.addonId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CategoryAddonsTableData(')
+          ..write('id: $id, ')
+          ..write('categoryId: $categoryId, ')
+          ..write('addonId: $addonId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, categoryId, addonId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CategoryAddonsTableData &&
+          other.id == this.id &&
+          other.categoryId == this.categoryId &&
+          other.addonId == this.addonId);
+}
+
+class CategoryAddonsTableCompanion
+    extends UpdateCompanion<CategoryAddonsTableData> {
+  final Value<int> id;
+  final Value<int> categoryId;
+  final Value<int> addonId;
+  const CategoryAddonsTableCompanion({
+    this.id = const Value.absent(),
+    this.categoryId = const Value.absent(),
+    this.addonId = const Value.absent(),
+  });
+  CategoryAddonsTableCompanion.insert({
+    this.id = const Value.absent(),
+    required int categoryId,
+    required int addonId,
+  })  : categoryId = Value(categoryId),
+        addonId = Value(addonId);
+  static Insertable<CategoryAddonsTableData> custom({
+    Expression<int>? id,
+    Expression<int>? categoryId,
+    Expression<int>? addonId,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (categoryId != null) 'category_id': categoryId,
+      if (addonId != null) 'addon_id': addonId,
+    });
+  }
+
+  CategoryAddonsTableCompanion copyWith(
+      {Value<int>? id, Value<int>? categoryId, Value<int>? addonId}) {
+    return CategoryAddonsTableCompanion(
+      id: id ?? this.id,
+      categoryId: categoryId ?? this.categoryId,
+      addonId: addonId ?? this.addonId,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (categoryId.present) {
+      map['category_id'] = Variable<int>(categoryId.value);
+    }
+    if (addonId.present) {
+      map['addon_id'] = Variable<int>(addonId.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CategoryAddonsTableCompanion(')
+          ..write('id: $id, ')
+          ..write('categoryId: $categoryId, ')
+          ..write('addonId: $addonId')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $TransactionsTableTable extends TransactionsTable
     with TableInfo<$TransactionsTableTable, TransactionsTableData> {
   @override
@@ -3808,6 +4038,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ProductVariantsTableTable productVariantsTable =
       $ProductVariantsTableTable(this);
   late final $AddonsTableTable addonsTable = $AddonsTableTable(this);
+  late final $CategoryAddonsTableTable categoryAddonsTable =
+      $CategoryAddonsTableTable(this);
   late final $TransactionsTableTable transactionsTable =
       $TransactionsTableTable(this);
   late final $TransactionItemsTableTable transactionItemsTable =
@@ -3823,6 +4055,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         productsTable,
         productVariantsTable,
         addonsTable,
+        categoryAddonsTable,
         transactionsTable,
         transactionItemsTable,
         settingsTable
@@ -4165,6 +4398,24 @@ final class $$CategoriesTableTableReferences extends BaseReferences<
     return ProcessedTableManager(
         manager.$state.copyWith(prefetchedData: cache));
   }
+
+  static MultiTypedResultKey<$CategoryAddonsTableTable,
+      List<CategoryAddonsTableData>> _categoryAddonsTableRefsTable(
+          _$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(db.categoryAddonsTable,
+          aliasName: $_aliasNameGenerator(
+              db.categoriesTable.id, db.categoryAddonsTable.categoryId));
+
+  $$CategoryAddonsTableTableProcessedTableManager get categoryAddonsTableRefs {
+    final manager =
+        $$CategoryAddonsTableTableTableManager($_db, $_db.categoryAddonsTable)
+            .filter((f) => f.categoryId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache =
+        $_typedResult.readTableOrNull(_categoryAddonsTableRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
 }
 
 class $$CategoriesTableTableFilterComposer
@@ -4207,6 +4458,27 @@ class $$CategoriesTableTableFilterComposer
             $$ProductsTableTableFilterComposer(
               $db: $db,
               $table: $db.productsTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<bool> categoryAddonsTableRefs(
+      Expression<bool> Function($$CategoryAddonsTableTableFilterComposer f) f) {
+    final $$CategoryAddonsTableTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.categoryAddonsTable,
+        getReferencedColumn: (t) => t.categoryId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$CategoryAddonsTableTableFilterComposer(
+              $db: $db,
+              $table: $db.categoryAddonsTable,
               $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
               joinBuilder: joinBuilder,
               $removeJoinBuilderFromRootComposer:
@@ -4291,6 +4563,29 @@ class $$CategoriesTableTableAnnotationComposer
             ));
     return f(composer);
   }
+
+  Expression<T> categoryAddonsTableRefs<T extends Object>(
+      Expression<T> Function($$CategoryAddonsTableTableAnnotationComposer a)
+          f) {
+    final $$CategoryAddonsTableTableAnnotationComposer composer =
+        $composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $db.categoryAddonsTable,
+            getReferencedColumn: (t) => t.categoryId,
+            builder: (joinBuilder,
+                    {$addJoinBuilderToRootComposer,
+                    $removeJoinBuilderFromRootComposer}) =>
+                $$CategoryAddonsTableTableAnnotationComposer(
+                  $db: $db,
+                  $table: $db.categoryAddonsTable,
+                  $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                  joinBuilder: joinBuilder,
+                  $removeJoinBuilderFromRootComposer:
+                      $removeJoinBuilderFromRootComposer,
+                ));
+    return f(composer);
+  }
 }
 
 class $$CategoriesTableTableTableManager extends RootTableManager<
@@ -4304,7 +4599,8 @@ class $$CategoriesTableTableTableManager extends RootTableManager<
     $$CategoriesTableTableUpdateCompanionBuilder,
     (CategoriesTableData, $$CategoriesTableTableReferences),
     CategoriesTableData,
-    PrefetchHooks Function({bool productsTableRefs})> {
+    PrefetchHooks Function(
+        {bool productsTableRefs, bool categoryAddonsTableRefs})> {
   $$CategoriesTableTableTableManager(
       _$AppDatabase db, $CategoriesTableTable table)
       : super(TableManagerState(
@@ -4354,11 +4650,13 @@ class $$CategoriesTableTableTableManager extends RootTableManager<
                     $$CategoriesTableTableReferences(db, table, e)
                   ))
               .toList(),
-          prefetchHooksCallback: ({productsTableRefs = false}) {
+          prefetchHooksCallback: (
+              {productsTableRefs = false, categoryAddonsTableRefs = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [
-                if (productsTableRefs) db.productsTable
+                if (productsTableRefs) db.productsTable,
+                if (categoryAddonsTableRefs) db.categoryAddonsTable
               ],
               addJoins: null,
               getPrefetchedDataCallback: (items) async {
@@ -4372,6 +4670,19 @@ class $$CategoriesTableTableTableManager extends RootTableManager<
                         managerFromTypedResult: (p0) =>
                             $$CategoriesTableTableReferences(db, table, p0)
                                 .productsTableRefs,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.categoryId == item.id),
+                        typedResults: items),
+                  if (categoryAddonsTableRefs)
+                    await $_getPrefetchedData<CategoriesTableData,
+                            $CategoriesTableTable, CategoryAddonsTableData>(
+                        currentTable: table,
+                        referencedTable: $$CategoriesTableTableReferences
+                            ._categoryAddonsTableRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$CategoriesTableTableReferences(db, table, p0)
+                                .categoryAddonsTableRefs,
                         referencedItemsForCurrentItem:
                             (item, referencedItems) => referencedItems
                                 .where((e) => e.categoryId == item.id),
@@ -4394,7 +4705,8 @@ typedef $$CategoriesTableTableProcessedTableManager = ProcessedTableManager<
     $$CategoriesTableTableUpdateCompanionBuilder,
     (CategoriesTableData, $$CategoriesTableTableReferences),
     CategoriesTableData,
-    PrefetchHooks Function({bool productsTableRefs})>;
+    PrefetchHooks Function(
+        {bool productsTableRefs, bool categoryAddonsTableRefs})>;
 typedef $$ProductsTableTableCreateCompanionBuilder = ProductsTableCompanion
     Function({
   Value<int> id,
@@ -5101,6 +5413,29 @@ typedef $$AddonsTableTableUpdateCompanionBuilder = AddonsTableCompanion
   Value<String> createdAt,
 });
 
+final class $$AddonsTableTableReferences
+    extends BaseReferences<_$AppDatabase, $AddonsTableTable, AddonsTableData> {
+  $$AddonsTableTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$CategoryAddonsTableTable,
+      List<CategoryAddonsTableData>> _categoryAddonsTableRefsTable(
+          _$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(db.categoryAddonsTable,
+          aliasName: $_aliasNameGenerator(
+              db.addonsTable.id, db.categoryAddonsTable.addonId));
+
+  $$CategoryAddonsTableTableProcessedTableManager get categoryAddonsTableRefs {
+    final manager =
+        $$CategoryAddonsTableTableTableManager($_db, $_db.categoryAddonsTable)
+            .filter((f) => f.addonId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache =
+        $_typedResult.readTableOrNull(_categoryAddonsTableRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+}
+
 class $$AddonsTableTableFilterComposer
     extends Composer<_$AppDatabase, $AddonsTableTable> {
   $$AddonsTableTableFilterComposer({
@@ -5124,6 +5459,27 @@ class $$AddonsTableTableFilterComposer
 
   ColumnFilters<String> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  Expression<bool> categoryAddonsTableRefs(
+      Expression<bool> Function($$CategoryAddonsTableTableFilterComposer f) f) {
+    final $$CategoryAddonsTableTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.categoryAddonsTable,
+        getReferencedColumn: (t) => t.addonId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$CategoryAddonsTableTableFilterComposer(
+              $db: $db,
+              $table: $db.categoryAddonsTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
 }
 
 class $$AddonsTableTableOrderingComposer
@@ -5174,6 +5530,29 @@ class $$AddonsTableTableAnnotationComposer
 
   GeneratedColumn<String> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  Expression<T> categoryAddonsTableRefs<T extends Object>(
+      Expression<T> Function($$CategoryAddonsTableTableAnnotationComposer a)
+          f) {
+    final $$CategoryAddonsTableTableAnnotationComposer composer =
+        $composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $db.categoryAddonsTable,
+            getReferencedColumn: (t) => t.addonId,
+            builder: (joinBuilder,
+                    {$addJoinBuilderToRootComposer,
+                    $removeJoinBuilderFromRootComposer}) =>
+                $$CategoryAddonsTableTableAnnotationComposer(
+                  $db: $db,
+                  $table: $db.categoryAddonsTable,
+                  $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                  joinBuilder: joinBuilder,
+                  $removeJoinBuilderFromRootComposer:
+                      $removeJoinBuilderFromRootComposer,
+                ));
+    return f(composer);
+  }
 }
 
 class $$AddonsTableTableTableManager extends RootTableManager<
@@ -5185,12 +5564,9 @@ class $$AddonsTableTableTableManager extends RootTableManager<
     $$AddonsTableTableAnnotationComposer,
     $$AddonsTableTableCreateCompanionBuilder,
     $$AddonsTableTableUpdateCompanionBuilder,
-    (
-      AddonsTableData,
-      BaseReferences<_$AppDatabase, $AddonsTableTable, AddonsTableData>
-    ),
+    (AddonsTableData, $$AddonsTableTableReferences),
     AddonsTableData,
-    PrefetchHooks Function()> {
+    PrefetchHooks Function({bool categoryAddonsTableRefs})> {
   $$AddonsTableTableTableManager(_$AppDatabase db, $AddonsTableTable table)
       : super(TableManagerState(
           db: db,
@@ -5230,9 +5606,37 @@ class $$AddonsTableTableTableManager extends RootTableManager<
             createdAt: createdAt,
           ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map((e) => (
+                    e.readTable(table),
+                    $$AddonsTableTableReferences(db, table, e)
+                  ))
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback: ({categoryAddonsTableRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (categoryAddonsTableRefs) db.categoryAddonsTable
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (categoryAddonsTableRefs)
+                    await $_getPrefetchedData<AddonsTableData,
+                            $AddonsTableTable, CategoryAddonsTableData>(
+                        currentTable: table,
+                        referencedTable: $$AddonsTableTableReferences
+                            ._categoryAddonsTableRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$AddonsTableTableReferences(db, table, p0)
+                                .categoryAddonsTableRefs,
+                        referencedItemsForCurrentItem: (item,
+                                referencedItems) =>
+                            referencedItems.where((e) => e.addonId == item.id),
+                        typedResults: items)
+                ];
+              },
+            );
+          },
         ));
 }
 
@@ -5245,12 +5649,331 @@ typedef $$AddonsTableTableProcessedTableManager = ProcessedTableManager<
     $$AddonsTableTableAnnotationComposer,
     $$AddonsTableTableCreateCompanionBuilder,
     $$AddonsTableTableUpdateCompanionBuilder,
-    (
-      AddonsTableData,
-      BaseReferences<_$AppDatabase, $AddonsTableTable, AddonsTableData>
-    ),
+    (AddonsTableData, $$AddonsTableTableReferences),
     AddonsTableData,
-    PrefetchHooks Function()>;
+    PrefetchHooks Function({bool categoryAddonsTableRefs})>;
+typedef $$CategoryAddonsTableTableCreateCompanionBuilder
+    = CategoryAddonsTableCompanion Function({
+  Value<int> id,
+  required int categoryId,
+  required int addonId,
+});
+typedef $$CategoryAddonsTableTableUpdateCompanionBuilder
+    = CategoryAddonsTableCompanion Function({
+  Value<int> id,
+  Value<int> categoryId,
+  Value<int> addonId,
+});
+
+final class $$CategoryAddonsTableTableReferences extends BaseReferences<
+    _$AppDatabase, $CategoryAddonsTableTable, CategoryAddonsTableData> {
+  $$CategoryAddonsTableTableReferences(
+      super.$_db, super.$_table, super.$_typedResult);
+
+  static $CategoriesTableTable _categoryIdTable(_$AppDatabase db) =>
+      db.categoriesTable.createAlias($_aliasNameGenerator(
+          db.categoryAddonsTable.categoryId, db.categoriesTable.id));
+
+  $$CategoriesTableTableProcessedTableManager get categoryId {
+    final $_column = $_itemColumn<int>('category_id')!;
+
+    final manager =
+        $$CategoriesTableTableTableManager($_db, $_db.categoriesTable)
+            .filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_categoryIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+
+  static $AddonsTableTable _addonIdTable(_$AppDatabase db) =>
+      db.addonsTable.createAlias($_aliasNameGenerator(
+          db.categoryAddonsTable.addonId, db.addonsTable.id));
+
+  $$AddonsTableTableProcessedTableManager get addonId {
+    final $_column = $_itemColumn<int>('addon_id')!;
+
+    final manager = $$AddonsTableTableTableManager($_db, $_db.addonsTable)
+        .filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_addonIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+}
+
+class $$CategoryAddonsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $CategoryAddonsTableTable> {
+  $$CategoryAddonsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  $$CategoriesTableTableFilterComposer get categoryId {
+    final $$CategoriesTableTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.categoryId,
+        referencedTable: $db.categoriesTable,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$CategoriesTableTableFilterComposer(
+              $db: $db,
+              $table: $db.categoriesTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$AddonsTableTableFilterComposer get addonId {
+    final $$AddonsTableTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.addonId,
+        referencedTable: $db.addonsTable,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$AddonsTableTableFilterComposer(
+              $db: $db,
+              $table: $db.addonsTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$CategoryAddonsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $CategoryAddonsTableTable> {
+  $$CategoryAddonsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  $$CategoriesTableTableOrderingComposer get categoryId {
+    final $$CategoriesTableTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.categoryId,
+        referencedTable: $db.categoriesTable,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$CategoriesTableTableOrderingComposer(
+              $db: $db,
+              $table: $db.categoriesTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$AddonsTableTableOrderingComposer get addonId {
+    final $$AddonsTableTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.addonId,
+        referencedTable: $db.addonsTable,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$AddonsTableTableOrderingComposer(
+              $db: $db,
+              $table: $db.addonsTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$CategoryAddonsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CategoryAddonsTableTable> {
+  $$CategoryAddonsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  $$CategoriesTableTableAnnotationComposer get categoryId {
+    final $$CategoriesTableTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.categoryId,
+        referencedTable: $db.categoriesTable,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$CategoriesTableTableAnnotationComposer(
+              $db: $db,
+              $table: $db.categoriesTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$AddonsTableTableAnnotationComposer get addonId {
+    final $$AddonsTableTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.addonId,
+        referencedTable: $db.addonsTable,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$AddonsTableTableAnnotationComposer(
+              $db: $db,
+              $table: $db.addonsTable,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$CategoryAddonsTableTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $CategoryAddonsTableTable,
+    CategoryAddonsTableData,
+    $$CategoryAddonsTableTableFilterComposer,
+    $$CategoryAddonsTableTableOrderingComposer,
+    $$CategoryAddonsTableTableAnnotationComposer,
+    $$CategoryAddonsTableTableCreateCompanionBuilder,
+    $$CategoryAddonsTableTableUpdateCompanionBuilder,
+    (CategoryAddonsTableData, $$CategoryAddonsTableTableReferences),
+    CategoryAddonsTableData,
+    PrefetchHooks Function({bool categoryId, bool addonId})> {
+  $$CategoryAddonsTableTableTableManager(
+      _$AppDatabase db, $CategoryAddonsTableTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CategoryAddonsTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CategoryAddonsTableTableOrderingComposer(
+                  $db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CategoryAddonsTableTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            Value<int> categoryId = const Value.absent(),
+            Value<int> addonId = const Value.absent(),
+          }) =>
+              CategoryAddonsTableCompanion(
+            id: id,
+            categoryId: categoryId,
+            addonId: addonId,
+          ),
+          createCompanionCallback: ({
+            Value<int> id = const Value.absent(),
+            required int categoryId,
+            required int addonId,
+          }) =>
+              CategoryAddonsTableCompanion.insert(
+            id: id,
+            categoryId: categoryId,
+            addonId: addonId,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable(table),
+                    $$CategoryAddonsTableTableReferences(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: ({categoryId = false, addonId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins: <
+                  T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic>>(state) {
+                if (categoryId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.categoryId,
+                    referencedTable: $$CategoryAddonsTableTableReferences
+                        ._categoryIdTable(db),
+                    referencedColumn: $$CategoryAddonsTableTableReferences
+                        ._categoryIdTable(db)
+                        .id,
+                  ) as T;
+                }
+                if (addonId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.addonId,
+                    referencedTable:
+                        $$CategoryAddonsTableTableReferences._addonIdTable(db),
+                    referencedColumn: $$CategoryAddonsTableTableReferences
+                        ._addonIdTable(db)
+                        .id,
+                  ) as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$CategoryAddonsTableTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $CategoryAddonsTableTable,
+    CategoryAddonsTableData,
+    $$CategoryAddonsTableTableFilterComposer,
+    $$CategoryAddonsTableTableOrderingComposer,
+    $$CategoryAddonsTableTableAnnotationComposer,
+    $$CategoryAddonsTableTableCreateCompanionBuilder,
+    $$CategoryAddonsTableTableUpdateCompanionBuilder,
+    (CategoryAddonsTableData, $$CategoryAddonsTableTableReferences),
+    CategoryAddonsTableData,
+    PrefetchHooks Function({bool categoryId, bool addonId})>;
 typedef $$TransactionsTableTableCreateCompanionBuilder
     = TransactionsTableCompanion Function({
   Value<int> id,
@@ -6447,6 +7170,8 @@ class $AppDatabaseManager {
       $$ProductVariantsTableTableTableManager(_db, _db.productVariantsTable);
   $$AddonsTableTableTableManager get addonsTable =>
       $$AddonsTableTableTableManager(_db, _db.addonsTable);
+  $$CategoryAddonsTableTableTableManager get categoryAddonsTable =>
+      $$CategoryAddonsTableTableTableManager(_db, _db.categoryAddonsTable);
   $$TransactionsTableTableTableManager get transactionsTable =>
       $$TransactionsTableTableTableManager(_db, _db.transactionsTable);
   $$TransactionItemsTableTableTableManager get transactionItemsTable =>
