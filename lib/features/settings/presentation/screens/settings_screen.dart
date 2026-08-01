@@ -1,6 +1,7 @@
 import 'package:coffee_pos/core/constant/app_colors.dart';
 import 'package:coffee_pos/core/constant/app_sizes.dart';
 import 'package:coffee_pos/features/settings/presentation/screens/backup_screen.dart';
+import 'package:coffee_pos/features/settings/presentation/screens/cloud_sync_screen.dart';
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -279,6 +280,35 @@ class _SettingsScreenState
                       context,
                       MaterialPageRoute(
                         builder: (_) => const BackupRestoreScreen(),
+                      ),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        AppSizes.radiusMd,
+                      ),
+                      side: const BorderSide(
+                        color: AppColors.border,
+                      ),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: AppSizes.sm),
+
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(
+                      Icons.cloud_sync,
+                      color: AppColors.info,
+                    ),
+                    title: const Text('Cloud Sync'),
+                    subtitle: const Text(
+                      'Auto backup ke Google Drive',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const CloudSyncScreen(),
                       ),
                     ),
                     shape: RoundedRectangleBorder(

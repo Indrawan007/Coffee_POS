@@ -1,4 +1,5 @@
 import 'package:coffee_pos/core/database/app_database.dart';
+import 'package:coffee_pos/core/utils/auto_sync_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -90,6 +91,15 @@ class TransactionNotifier extends _$TransactionNotifier {
         isLoading: false,
         result: result,
       );
+
+      state = state.copyWith(
+        isLoading: false,
+        result: result,
+      );
+
+      // ✅ Mark data changed untuk auto sync
+      AutoSyncService.instance.onDataChanged();
+      
     } catch (e) {
       state = state.copyWith(
         isLoading: false,

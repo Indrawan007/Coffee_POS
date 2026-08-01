@@ -27,7 +27,7 @@ final transactionDatasourceProvider =
 typedef TransactionDatasourceRef
     = AutoDisposeProviderRef<TransactionDatasource>;
 String _$transactionNotifierHash() =>
-    r'ec0dd3cddc3175f42cbff27f1c55dfe97942cb1f';
+    r'521d7e60571a5b299e833b6c880fca0c7993e913';
 
 /// See also [TransactionNotifier].
 @ProviderFor(TransactionNotifier)
