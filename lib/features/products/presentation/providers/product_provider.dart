@@ -7,13 +7,11 @@ import '../../data/datasources/product_datasource.dart';
 
 part 'product_provider.g.dart';
 
-// ─── DATASOURCE PROVIDER ──────────────────────────
-@Riverpod(keepAlive: true)
+@riverpod
 ProductDatasource productDatasource(Ref ref) {
   return ProductDatasource(AppDatabase.instance);
 }
 
-// ─── PRODUCTS WITH DETAILS ────────────────────────
 @riverpod
 Future<List<ProductWithDetails>> productsWithDetails(
   Ref ref,
@@ -22,13 +20,15 @@ Future<List<ProductWithDetails>> productsWithDetails(
     .getAllWithDetails();
 }
 
-// ─── ACTIVE ADDONS ────────────────────────────────
-@riverpod
-Future<List<AddonsTableData>> activeAddons(Ref ref) {
-  return ref.watch(productDatasourceProvider).getActiveAddons();
-}
+final addonsByCategoryProvider =
+    FutureProvider.family<List<AddonsTableData>, int>(
+  (ref, categoryId) async {
+    final ds = ref.watch(productDatasourceProvider);
+    return ds.getAddonsByCategory(categoryId);
+  },
+);
 
-// ─── VARIANT INPUT MODEL ─────────────────────────
+// ─── VARIANT INPUT MODEL ──────────────────────────
 class VariantInput {
   VariantInput({
     this.id,
@@ -86,20 +86,24 @@ class ProductFormNotifier extends _$ProductFormNotifier {
     required bool isActive,
     required List<VariantInput> variants,
   }) async {
-    state = state.copyWith(isLoading: true, clearError: true);
+    state = state.copyWith(
+      isLoading: true,
+      clearError: true,
+    );
 
     try {
-      final now = DateTime.now().toIso8601String();
-      final ds  = ref.read(productDatasourceProvider);
+      final ds = ref.read(productDatasourceProvider);
 
       int productId;
 
       if (id == null) {
-        // ── INSERT ────────────────────────────────
+        // ── INSERT ────────────────────────────
+        final now = DateTime.now().toIso8601String();
+
         productId = await ds.insert(
           ProductsTableCompanion.insert(
             categoryId: categoryId,
-            name: name,
+            name: name.trim(),
             description: Value(description),
             basePrice: Value(basePrice),
             imagePath: Value(imagePath),
@@ -109,39 +113,46 @@ class ProductFormNotifier extends _$ProductFormNotifier {
           ),
         );
       } else {
-        // ── UPDATE ────────────────────────────────
+        // ✅ FIX: UPDATE pakai method baru
         productId = id;
-        await ds.update(
-          ProductsTableCompanion(
-            id: Value(id),
-            categoryId: Value(categoryId),
-            name: Value(name),
-            description: Value(description),
-            basePrice: Value(basePrice),
-            imagePath: Value(imagePath),
-            isActive: Value(isActive),
-            updatedAt: Value(now),
-          ),
+
+        await ds.updateProduct(
+          id: id,
+          categoryId: categoryId,
+          name: name.trim(),
+          description: description,
+          basePrice: basePrice,
+          imagePath: imagePath,
+          isActive: isActive,
         );
-        // Hapus variants lama sebelum insert baru
+
+        // Hapus variants lama
         await ds.deleteVariants(id);
       }
 
-      // ── SAVE VARIANTS ─────────────────────────
-      if (variants.isNotEmpty) {
+      // ── SAVE VARIANTS ─────────────────────
+      final validVariants = variants
+        .where((v) => v.name.trim().isNotEmpty)
+        .toList();
+
+      if (validVariants.isNotEmpty) {
         await ds.insertVariants(
-          variants
-            .where((v) => v.name.trim().isNotEmpty)
+          validVariants
             .map((v) =>
               ProductVariantsTableCompanion.insert(
                 productId: productId,
                 name: v.name.trim(),
-                priceAdjustment: Value(v.priceAdjustment),
+                priceAdjustment: Value(
+                  v.priceAdjustment,
+                ),
               ),
             )
             .toList(),
         );
       }
+
+      // ✅ Refresh product list
+      ref.invalidate(productsWithDetailsProvider);
 
       state = state.copyWith(
         isLoading: false,
@@ -159,22 +170,13 @@ class ProductFormNotifier extends _$ProductFormNotifier {
     await ref
       .read(productDatasourceProvider)
       .toggleActive(id, isActive);
+    // ✅ Refresh list
+    ref.invalidate(productsWithDetailsProvider);
   }
 
   Future<void> delete(int id) async {
     await ref.read(productDatasourceProvider).delete(id);
+    // ✅ Refresh list
+    ref.invalidate(productsWithDetailsProvider);
   }
 }
-
-// ✅ TAMBAH: Provider addon berdasarkan kategori
-final addonsByCategoryProvider =
-    FutureProvider.family<List<AddonsTableData>, int>(
-  (ref, categoryId) async {
-    final ds = ref.watch(productDatasourceProvider);
-    final addons = await ds.getAddonsByCategory(categoryId);
-
-    // Jika tidak ada relasi, return kosong
-    // (bukan return semua addon)
-    return addons;
-  },
-);

@@ -3,7 +3,6 @@ import 'package:coffee_pos/core/constant/app_sizes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_text_field.dart';
@@ -22,14 +21,14 @@ class ProductFormScreen extends ConsumerStatefulWidget {
 class _ProductFormScreenState
     extends ConsumerState<ProductFormScreen> {
 
-  final _formKey      = GlobalKey<FormState>();
-  final _nameCtrl     = TextEditingController();
-  final _descCtrl     = TextEditingController();
-  final _priceCtrl    = TextEditingController();
+  final _formKey   = GlobalKey<FormState>();
+  final _nameCtrl  = TextEditingController();
+  final _descCtrl  = TextEditingController();
+  final _priceCtrl = TextEditingController();
 
-  int?   _selectedCategoryId;
-  bool   _isActive     = true;
-  bool   _initialized  = false;
+  int?  _selectedCategoryId;
+  bool  _isActive    = true;
+  bool  _initialized = false;
 
   final List<VariantInput> _variants = [];
 
@@ -47,16 +46,20 @@ class _ProductFormScreenState
     if (!isEdit || _initialized) return;
     _initialized = true;
 
-    final ds   = ref.read(productDatasourceProvider);
-    final item = await ds.getByIdWithDetails(widget.productId!);
+    final ds = ref.read(productDatasourceProvider);
+    final item = await ds.getByIdWithDetails(
+      widget.productId!,
+    );
 
-    if (item != null) {
+    if (item != null && mounted) {
       setState(() {
-        _nameCtrl.text          = item.product.name;
-        _descCtrl.text          = item.product.description ?? '';
-        _priceCtrl.text         = item.product.basePrice.toStringAsFixed(0);
-        _selectedCategoryId     = item.product.categoryId;
-        _isActive               = item.product.isActive;
+        _nameCtrl.text  = item.product.name;
+        _descCtrl.text  = item.product.description ?? '';
+        _priceCtrl.text =
+          item.product.basePrice.toStringAsFixed(0);
+        _selectedCategoryId = item.product.categoryId;
+        _isActive = item.product.isActive;
+        _variants.clear();
         _variants.addAll(
           item.variants.map((v) => VariantInput(
             id: v.id,
@@ -70,7 +73,9 @@ class _ProductFormScreenState
 
   void _addVariant() {
     setState(() {
-      _variants.add(VariantInput(name: '', priceAdjustment: 0));
+      _variants.add(
+        VariantInput(name: '', priceAdjustment: 0),
+      );
     });
   }
 
@@ -80,34 +85,41 @@ class _ProductFormScreenState
 
   Future<void> _onSave() async {
     if (!_formKey.currentState!.validate()) return;
+
     if (_selectedCategoryId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pilih kategori terlebih dahulu')),
+        const SnackBar(
+          content: Text('Pilih kategori terlebih dahulu'),
+          backgroundColor: AppColors.error,
+        ),
       );
       return;
     }
 
-    await ref.read(productFormNotifierProvider.notifier).save(
-      id: widget.productId,
-      categoryId: _selectedCategoryId!,
-      name: _nameCtrl.text.trim(),
-      description: _descCtrl.text.trim().isEmpty
-        ? null
-        : _descCtrl.text.trim(),
-      basePrice: double.tryParse(
-        _priceCtrl.text.replaceAll('.', ''),
-      ) ?? 0,
-      isActive: _isActive,
-      variants: _variants
-        .where((v) => v.name.trim().isNotEmpty)
-        .toList(),
-    );
+    final priceText = _priceCtrl.text.replaceAll('.', '');
+
+    await ref.read(productFormNotifierProvider.notifier)
+      .save(
+        id: widget.productId,
+        categoryId: _selectedCategoryId!,
+        name: _nameCtrl.text.trim(),
+        description: _descCtrl.text.trim().isEmpty
+          ? null
+          : _descCtrl.text.trim(),
+        basePrice: double.tryParse(priceText) ?? 0,
+        isActive: _isActive,
+        variants: _variants
+          .where((v) => v.name.trim().isNotEmpty)
+          .toList(),
+      );
   }
 
   @override
   Widget build(BuildContext context) {
+    // ✅ Load data produk saat edit
     _loadProduct();
 
+    // Listen hasil save
     ref.listen(productFormNotifierProvider, (prev, next) {
       if (next.isSuccess) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -117,9 +129,10 @@ class _ProductFormScreenState
                 ? 'Produk berhasil diperbarui'
                 : 'Produk berhasil ditambahkan',
             ),
+            backgroundColor: AppColors.success,
           ),
         );
-        context.pop('/products');
+        Navigator.pop(context);
       }
       if (next.errorMessage != null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -131,15 +144,17 @@ class _ProductFormScreenState
       }
     });
 
-    final formState  = ref.watch(productFormNotifierProvider);
-    final catStream  = ref.watch(categoriesStreamProvider);
+    final formState = ref.watch(productFormNotifierProvider);
+    final catStream = ref.watch(categoriesStreamProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEdit ? 'Edit Produk' : 'Tambah Produk'),
+        title: Text(
+          isEdit ? 'Edit Produk' : 'Tambah Produk',
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop('/products'),
+          onPressed: () => Navigator.pop(context),
         ),
       ),
       body: SingleChildScrollView(
@@ -149,9 +164,8 @@ class _ProductFormScreenState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
-              // ── BASIC INFO ──────────────────────────
-              const _SectionTitle(title: 'Informasi Produk'),
+              // ── INFO PRODUK ─────────────────
+              _SectionTitle(title: 'Informasi Produk'),
               const SizedBox(height: AppSizes.sm),
 
               AppTextField(
@@ -169,27 +183,29 @@ class _ProductFormScreenState
 
               AppTextField(
                 label: 'Deskripsi (opsional)',
-                hint: 'Deskripsi singkat produk...',
+                hint: 'Deskripsi singkat...',
                 controller: _descCtrl,
                 maxLines: 2,
               ),
               const SizedBox(height: AppSizes.md),
 
-              // Category dropdown
+              // Kategori dropdown
               catStream.when(
-                loading: () => const CircularProgressIndicator(),
-                error: (e, _) => Text('Error: $e'),
+                loading: () =>
+                  const CircularProgressIndicator(),
+                error: (e, _) =>
+                  Text('Error: $e'),
                 data: (cats) {
-                  final activeCats = cats
+                  final active = cats
                     .where((c) => c.isActive)
                     .toList();
                   return DropdownButtonFormField<int>(
-                    initialValue: _selectedCategoryId,
+                    value: _selectedCategoryId,
                     decoration: const InputDecoration(
                       labelText: 'Kategori',
                     ),
                     hint: const Text('Pilih kategori'),
-                    items: activeCats.map((c) =>
+                    items: active.map((c) =>
                       DropdownMenuItem(
                         value: c.id,
                         child: Text(c.name),
@@ -219,10 +235,6 @@ class _ProductFormScreenState
                   if (v == null || v.isEmpty) {
                     return 'Harga wajib diisi';
                   }
-                  final price = double.tryParse(v);
-                  if (price == null || price < 0) {
-                    return 'Harga tidak valid';
-                  }
                   return null;
                 },
               ),
@@ -233,12 +245,14 @@ class _ProductFormScreenState
                 children: [
                   const Text(
                     'Status Produk',
-                    style: TextStyle(fontWeight: FontWeight.w500),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                   const Spacer(),
                   Switch(
                     value: _isActive,
-                    activeThumbColor: AppColors.primary,
+                    activeColor: AppColors.primary,
                     onChanged: (val) =>
                       setState(() => _isActive = val),
                   ),
@@ -253,11 +267,11 @@ class _ProductFormScreenState
                 ],
               ),
 
-              // ── VARIANTS ────────────────────────────
+              // ── VARIAN ──────────────────────
               const SizedBox(height: AppSizes.lg),
               Row(
                 children: [
-                  const _SectionTitle(title: 'Varian'),
+                  _SectionTitle(title: 'Varian'),
                   const Spacer(),
                   TextButton.icon(
                     onPressed: _addVariant,
@@ -269,18 +283,25 @@ class _ProductFormScreenState
 
               if (_variants.isEmpty)
                 Container(
-                  padding: const EdgeInsets.all(AppSizes.md),
+                  padding: const EdgeInsets.all(
+                    AppSizes.md,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.surfaceVar,
                     borderRadius: BorderRadius.circular(
                       AppSizes.radiusMd,
                     ),
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(
+                      color: AppColors.border,
+                    ),
                   ),
                   child: const Center(
                     child: Text(
-                      'Tidak ada varian. Tap + untuk menambah.',
-                      style: TextStyle(color: AppColors.textHint),
+                      'Tidak ada varian. '
+                      'Tap + untuk menambah.',
+                      style: TextStyle(
+                        color: AppColors.textHint,
+                      ),
                     ),
                   ),
                 ),
@@ -289,18 +310,23 @@ class _ProductFormScreenState
                 final i = entry.key;
                 final v = entry.value;
                 return _VariantRow(
+                  key: ValueKey('variant_$i'),
                   variant: v,
                   onRemove: () => _removeVariant(i),
-                  onNameChanged: (val) => v.name = val,
+                  onNameChanged: (val) =>
+                    v.name = val,
                   onPriceChanged: (val) =>
-                    v.priceAdjustment = double.tryParse(val) ?? 0,
+                    v.priceAdjustment =
+                      double.tryParse(val) ?? 0,
                 );
               }),
 
               const SizedBox(height: AppSizes.xl),
 
               AppButton(
-                label: isEdit ? 'Perbarui Produk' : 'Simpan Produk',
+                label: isEdit
+                  ? 'Perbarui Produk'
+                  : 'Simpan Produk',
                 onPressed: _onSave,
                 isLoading: formState.isLoading,
                 icon: Icons.save_outlined,
@@ -334,6 +360,7 @@ class _SectionTitle extends StatelessWidget {
 
 class _VariantRow extends StatelessWidget {
   const _VariantRow({
+    super.key,
     required this.variant,
     required this.onRemove,
     required this.onNameChanged,
@@ -348,7 +375,9 @@ class _VariantRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.only(bottom: AppSizes.sm),
+      margin: const EdgeInsets.only(
+        bottom: AppSizes.sm,
+      ),
       child: Padding(
         padding: const EdgeInsets.all(AppSizes.sm),
         child: Row(

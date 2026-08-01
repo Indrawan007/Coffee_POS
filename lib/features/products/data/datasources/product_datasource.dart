@@ -16,14 +16,12 @@ class ProductDatasource {
   const ProductDatasource(this._db);
   final AppDatabase _db;
 
-  // Watch all products
   Stream<List<ProductsTableData>> watchAll() {
     return (_db.select(_db.productsTable)
       ..orderBy([(p) => OrderingTerm.asc(p.name)])
     ).watch();
   }
 
-  // Get all with details
   Future<List<ProductWithDetails>> getAllWithDetails() async {
     final products = await (_db.select(_db.productsTable)
       ..orderBy([(p) => OrderingTerm.asc(p.name)])
@@ -32,13 +30,15 @@ class ProductDatasource {
     final result = <ProductWithDetails>[];
 
     for (final product in products) {
-      final variants = await (_db.select(_db.productVariantsTable)
-        ..where((v) => v.productId.equals(product.id))
-        ..where((v) => v.isActive.equals(true))
+      final variants = await (
+        _db.select(_db.productVariantsTable)
+          ..where((v) => v.productId.equals(product.id))
+          ..where((v) => v.isActive.equals(true))
       ).get();
 
-      final category = await (_db.select(_db.categoriesTable)
-        ..where((c) => c.id.equals(product.categoryId))
+      final category = await (
+        _db.select(_db.categoriesTable)
+          ..where((c) => c.id.equals(product.categoryId))
       ).getSingle();
 
       result.add(ProductWithDetails(
@@ -51,20 +51,24 @@ class ProductDatasource {
     return result;
   }
 
-  // Get by id with details
-  Future<ProductWithDetails?> getByIdWithDetails(int id) async {
-    final product = await (_db.select(_db.productsTable)
-      ..where((p) => p.id.equals(id))
+  Future<ProductWithDetails?> getByIdWithDetails(
+    int id,
+  ) async {
+    final product = await (
+      _db.select(_db.productsTable)
+        ..where((p) => p.id.equals(id))
     ).getSingleOrNull();
 
     if (product == null) return null;
 
-    final variants = await (_db.select(_db.productVariantsTable)
-      ..where((v) => v.productId.equals(id))
+    final variants = await (
+      _db.select(_db.productVariantsTable)
+        ..where((v) => v.productId.equals(id))
     ).get();
 
-    final category = await (_db.select(_db.categoriesTable)
-      ..where((c) => c.id.equals(product.categoryId))
+    final category = await (
+      _db.select(_db.categoriesTable)
+        ..where((c) => c.id.equals(product.categoryId))
     ).getSingle();
 
     return ProductWithDetails(
@@ -72,20 +76,6 @@ class ProductDatasource {
       variants: variants,
       category: category,
     );
-  }
-
-  // ✅ TAMBAH: Get addons berdasarkan categoryId produk
-  Future<List<AddonsTableData>> getAddonsByCategory(
-    int categoryId,
-  ) async {
-    return _db.getAddonsByCategory(categoryId);
-  }
-
-  // ✅ TAMBAH: Get semua addons (untuk fallback)
-  Future<List<AddonsTableData>> getActiveAddons() {
-    return (_db.select(_db.addonsTable)
-      ..where((a) => a.isActive.equals(true))
-    ).get();
   }
 
   Stream<List<ProductsTableData>> watchByCategory(
@@ -104,12 +94,35 @@ class ProductDatasource {
     return _db.into(_db.productsTable).insert(data);
   }
 
-  Future<bool> update(ProductsTableCompanion data) {
-    return _db.update(_db.productsTable).replace(data);
+  // ✅ FIX: Gunakan write() bukan replace()
+  Future<void> updateProduct({
+    required int id,
+    required int categoryId,
+    required String name,
+    String? description,
+    required double basePrice,
+    String? imagePath,
+    required bool isActive,
+  }) async {
+    final now = DateTime.now().toIso8601String();
+
+    await (_db.update(_db.productsTable)
+      ..where((p) => p.id.equals(id))
+    ).write(
+      ProductsTableCompanion(
+        categoryId: Value(categoryId),
+        name: Value(name),
+        description: Value(description),
+        basePrice: Value(basePrice),
+        imagePath: Value(imagePath),
+        isActive: Value(isActive),
+        updatedAt: Value(now),
+      ),
+    );
   }
 
-  Future<void> deleteVariants(int productId) {
-    return (_db.delete(_db.productVariantsTable)
+  Future<void> deleteVariants(int productId) async {
+    await (_db.delete(_db.productVariantsTable)
       ..where((v) => v.productId.equals(productId))
     ).go();
   }
@@ -148,5 +161,17 @@ class ProductDatasource {
       ..where((v) => v.productId.equals(productId))
       ..where((v) => v.isActive.equals(true))
     ).get();
+  }
+
+  Future<List<AddonsTableData>> getActiveAddons() {
+    return (_db.select(_db.addonsTable)
+      ..where((a) => a.isActive.equals(true))
+    ).get();
+  }
+
+  Future<List<AddonsTableData>> getAddonsByCategory(
+    int categoryId,
+  ) async {
+    return _db.getAddonsByCategory(categoryId);
   }
 }
