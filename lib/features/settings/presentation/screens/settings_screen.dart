@@ -1,5 +1,6 @@
 import 'package:coffee_pos/core/constant/app_colors.dart';
 import 'package:coffee_pos/core/constant/app_sizes.dart';
+import 'package:coffee_pos/features/security/presentation/screens/security_settings_screen.dart';
 import 'package:coffee_pos/features/settings/presentation/screens/backup_screen.dart';
 import 'package:coffee_pos/features/settings/presentation/screens/cloud_sync_screen.dart';
 import 'package:drift/drift.dart' hide Column;
@@ -309,6 +310,36 @@ class _SettingsScreenState
                       context,
                       MaterialPageRoute(
                         builder: (_) => const CloudSyncScreen(),
+                      ),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        AppSizes.radiusMd,
+                      ),
+                      side: const BorderSide(
+                        color: AppColors.border,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: AppSizes.sm),
+
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(
+                      Icons.security,
+                      color: AppColors.primary,
+                    ),
+                    title: const Text('Keamanan'),
+                    subtitle: const Text(
+                      'PIN, auto lock, password',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                          const SecuritySettingsScreen(),
                       ),
                     ),
                     shape: RoundedRectangleBorder(

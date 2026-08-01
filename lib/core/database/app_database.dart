@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:coffee_pos/core/database/tables/activity_logs_table.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart';
@@ -30,7 +31,7 @@ part 'app_database.g.dart';
     CategoryAddonsTable,
     TransactionsTable,
     TransactionItemsTable,
-    SettingsTable,
+    ActivityLogsTable,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -46,7 +47,7 @@ class AppDatabase extends _$AppDatabase {
 
   // ✅ Update schema version
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration {
@@ -61,6 +62,10 @@ class AppDatabase extends _$AppDatabase {
           await m.createTable(categoryAddonsTable);
           // Seed relasi addon-kategori
           await _seedCategoryAddons();
+        }
+        // ✅ Tambah migrasi v3
+        if (from < 3) {
+          await m.createTable(activityLogsTable);
         }
       },
       beforeOpen: (details) async {
@@ -372,7 +377,38 @@ class AppDatabase extends _$AppDatabase {
     // Seed category addons setelah data ada
     await _seedCategoryAddons();
   }
-}
+
+
+
+  // ✅ Method log activity
+  Future<void> logActivity({
+    required String action,
+    String? detail,
+    int? userId,
+    String? userName,
+  }) async {
+      await into(activityLogsTable).insert(
+        ActivityLogsTableCompanion.insert(
+          action: action,
+          detail: Value(detail),
+          userId: Value(userId),
+          userName: Value(userName),
+          createdAt: DateTime.now().toIso8601String(),
+        ),
+      );
+    }
+
+    // ✅ Get activity logs
+    Future<List<ActivityLogsTableData>> getActivityLogs({
+      int limit = 50,
+    }) async {
+      return (select(activityLogsTable)
+        ..orderBy([(l) => OrderingTerm.desc(l.createdAt)])
+        ..limit(limit)
+      ).get();
+    }
+  }
+
 
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
