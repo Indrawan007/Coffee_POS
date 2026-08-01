@@ -328,6 +328,7 @@ class _EmergencyResetDialogState
   final _usernameCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   bool  _isLoading    = false;
+  bool  _obscure      = true;
   String? _error;
 
   @override
@@ -362,7 +363,6 @@ class _EmergencyResetDialogState
             ),
           );
         }
-
         widget.onSuccess();
       } else {
         setState(() {
@@ -378,7 +378,6 @@ class _EmergencyResetDialogState
     }
   }
 
-  // ✅ FIX: Query database langsung tanpa & operator
   Future<bool> _verifyAdminAccount(
     String username,
     String password,
@@ -404,154 +403,296 @@ class _EmergencyResetDialogState
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return Dialog(
+      insetPadding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.md,
+        vertical: AppSizes.xl,
+      ),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(
-          AppSizes.radiusLg,
+          AppSizes.radiusXl,
         ),
       ),
-      title: const Row(
-        children: [
-          Icon(Icons.emergency, color: AppColors.warning),
-          SizedBox(width: AppSizes.sm),
-          Expanded(
-            child: Text(
-              'Reset PIN Darurat',
-              style: TextStyle(fontSize: 18),
-            ),
-          ),
-        ],
-      ),
-      content: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(AppSizes.sm),
-                decoration: BoxDecoration(
-                  color: AppColors.warning.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(
-                    AppSizes.radiusSm,
-                  ),
-                  border: Border.all(
-                    color: AppColors.warning.withOpacity(0.3),
-                  ),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(
-                      Icons.warning_amber,
-                      color: AppColors.warning,
-                      size: 18,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: 400,
+        ),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSizes.lg),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // ── HEADER ──────────────────
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: AppColors.warning
+                        .withOpacity(0.1),
+                      shape: BoxShape.circle,
                     ),
-                    SizedBox(width: AppSizes.xs),
-                    Expanded(
-                      child: Text(
-                        'Masukkan akun ADMIN untuk '
-                        'mereset PIN aplikasi.',
-                        style: TextStyle(
-                          fontSize: 12,
+                    child: const Icon(
+                      Icons.lock_reset,
+                      color: AppColors.warning,
+                      size: 32,
+                    ),
+                  ),
+                  const SizedBox(height: AppSizes.md),
+
+                  const Text(
+                    'Reset PIN Darurat',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: AppSizes.xs),
+                  const Text(
+                    'Verifikasi akun Admin untuk\nmereset PIN aplikasi',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                    ),
+                  ),
+
+                  const SizedBox(height: AppSizes.lg),
+
+                  // ── WARNING BOX ─────────────
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(
+                      AppSizes.md,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.warning
+                        .withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(
+                        AppSizes.radiusMd,
+                      ),
+                      border: Border.all(
+                        color: AppColors.warning
+                          .withOpacity(0.2),
+                      ),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(
+                          Icons.shield,
                           color: AppColors.warning,
+                          size: 20,
+                        ),
+                        SizedBox(width: AppSizes.sm),
+                        Expanded(
+                          child: Text(
+                            'Hanya akun dengan role Admin '
+                            'yang bisa mereset PIN.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.warning,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: AppSizes.md),
+
+                  // ── ERROR ───────────────────
+                  if (_error != null) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(
+                        AppSizes.sm,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.error
+                          .withOpacity(0.1),
+                        borderRadius:
+                          BorderRadius.circular(
+                            AppSizes.radiusSm,
+                          ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            color: AppColors.error,
+                            size: 16,
+                          ),
+                          const SizedBox(
+                            width: AppSizes.xs,
+                          ),
+                          Expanded(
+                            child: Text(
+                              _error!,
+                              style: const TextStyle(
+                                color: AppColors.error,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSizes.md),
+                  ],
+
+                  // ── USERNAME ─────────────────
+                  TextFormField(
+                    controller: _usernameCtrl,
+                    textInputAction: TextInputAction.next,
+                    decoration: InputDecoration(
+                      labelText: 'Username Admin',
+                      hintText: 'Masukkan username',
+                      prefixIcon: const Icon(
+                        Icons.person_outline,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius:
+                          BorderRadius.circular(
+                            AppSizes.radiusMd,
+                          ),
+                      ),
+                    ),
+                    validator: (v) =>
+                      v == null || v.trim().isEmpty
+                        ? 'Username wajib diisi'
+                        : null,
+                  ),
+
+                  const SizedBox(height: AppSizes.md),
+
+                  // ── PASSWORD ─────────────────
+                  TextFormField(
+                    controller: _passwordCtrl,
+                    obscureText: _obscure,
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: (_) => _onVerify(),
+                    decoration: InputDecoration(
+                      labelText: 'Password Admin',
+                      hintText: 'Masukkan password',
+                      prefixIcon: const Icon(
+                        Icons.lock_outline,
+                      ),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscure
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                          color: AppColors.textHint,
+                        ),
+                        onPressed: () => setState(
+                          () => _obscure = !_obscure,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSizes.md),
-
-              if (_error != null)
-                Container(
-                  margin: const EdgeInsets.only(
-                    bottom: AppSizes.sm,
-                  ),
-                  padding: const EdgeInsets.all(AppSizes.sm),
-                  decoration: BoxDecoration(
-                    color: AppColors.error.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(
-                      AppSizes.radiusSm,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        color: AppColors.error,
-                        size: 16,
+                      border: OutlineInputBorder(
+                        borderRadius:
+                          BorderRadius.circular(
+                            AppSizes.radiusMd,
+                          ),
                       ),
-                      const SizedBox(width: AppSizes.xs),
+                    ),
+                    validator: (v) =>
+                      v == null || v.isEmpty
+                        ? 'Password wajib diisi'
+                        : null,
+                  ),
+
+                  const SizedBox(height: AppSizes.xl),
+
+                  // ── BUTTONS ──────────────────
+                  Row(
+                    children: [
+                      // Cancel
                       Expanded(
-                        child: Text(
-                          _error!,
-                          style: const TextStyle(
-                            color: AppColors.error,
-                            fontSize: 12,
+                        child: SizedBox(
+                          height: 48,
+                          child: OutlinedButton(
+                            onPressed: () =>
+                              Navigator.pop(context),
+                            style:
+                              OutlinedButton.styleFrom(
+                                shape:
+                                  RoundedRectangleBorder(
+                                    borderRadius:
+                                      BorderRadius
+                                        .circular(
+                                          AppSizes
+                                            .radiusMd,
+                                        ),
+                                  ),
+                              ),
+                            child: const Text('Batal'),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(width: AppSizes.md),
+
+                      // Reset
+                      Expanded(
+                        child: SizedBox(
+                          height: 48,
+                          child: ElevatedButton.icon(
+                            onPressed: _isLoading
+                              ? null
+                              : _onVerify,
+                            style:
+                              ElevatedButton.styleFrom(
+                                backgroundColor:
+                                  AppColors.warning,
+                                foregroundColor:
+                                  Colors.white,
+                                shape:
+                                  RoundedRectangleBorder(
+                                    borderRadius:
+                                      BorderRadius
+                                        .circular(
+                                          AppSizes
+                                            .radiusMd,
+                                        ),
+                                  ),
+                              ),
+                            icon: _isLoading
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child:
+                                    CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color:
+                                        Colors.white,
+                                    ),
+                                )
+                              : const Icon(
+                                  Icons.lock_reset,
+                                  size: 18,
+                                ),
+                            label: Text(
+                              _isLoading
+                                ? 'Verifikasi...'
+                                : 'Reset PIN',
+                            ),
                           ),
                         ),
                       ),
                     ],
                   ),
-                ),
-
-              TextFormField(
-                controller: _usernameCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Username Admin',
-                  prefixIcon: Icon(Icons.person_outline),
-                  isDense: true,
-                ),
-                validator: (v) =>
-                  v == null || v.trim().isEmpty
-                    ? 'Wajib diisi'
-                    : null,
+                ],
               ),
-              const SizedBox(height: AppSizes.sm),
-
-              TextFormField(
-                controller: _passwordCtrl,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Password Admin',
-                  prefixIcon: Icon(Icons.lock_outline),
-                  isDense: true,
-                ),
-                validator: (v) =>
-                  v == null || v.isEmpty
-                    ? 'Wajib diisi'
-                    : null,
-              ),
-            ],
+            ),
           ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Batal'),
-        ),
-        ElevatedButton(
-          onPressed: _isLoading ? null : _onVerify,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.warning,
-          ),
-          child: _isLoading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white,
-                ),
-              )
-            : const Text('Reset PIN'),
-        ),
-      ],
     );
   }
 }
+
 // ═══════════════════════════════════════════════════
 // PIN DOTS
 // ═══════════════════════════════════════════════════
