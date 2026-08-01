@@ -261,7 +261,7 @@ class _EmptyDayCard extends StatelessWidget {
           const SizedBox(height: AppSizes.lg),
 
           // Summary cards showing 0
-          Row(
+          const Row(
             children: [
               Expanded(
                 child: _MiniSummary(
@@ -271,7 +271,7 @@ class _EmptyDayCard extends StatelessWidget {
                   color: AppColors.success,
                 ),
               ),
-              const SizedBox(width: AppSizes.sm),
+              SizedBox(width: AppSizes.sm),
               Expanded(
                 child: _MiniSummary(
                   icon: Icons.receipt,
@@ -280,7 +280,7 @@ class _EmptyDayCard extends StatelessWidget {
                   color: AppColors.primary,
                 ),
               ),
-              const SizedBox(width: AppSizes.sm),
+              SizedBox(width: AppSizes.sm),
               Expanded(
                 child: _MiniSummary(
                   icon: Icons.trending_up,
@@ -440,7 +440,7 @@ class _BestSellerSection extends ConsumerWidget {
                 const Divider(),
 
                 if (items.isEmpty)
-                  _EmptySection(
+                  const _EmptySection(
                     icon: Icons.star_outline,
                     message:
                       'Belum ada produk terjual hari ini',
@@ -566,7 +566,7 @@ class _PaymentBreakdownSection extends ConsumerWidget {
                 const Divider(),
 
                 if (totalTrx == 0)
-                  _EmptySection(
+                  const _EmptySection(
                     icon: Icons.payment_outlined,
                     message:
                       'Belum ada pembayaran hari ini',

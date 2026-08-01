@@ -1,5 +1,4 @@
 import 'package:drift/drift.dart';
-import 'package:flutter/foundation.dart';
 
 import '../../../../core/database/app_database.dart';
 import '../../../../core/utils/hash_helper.dart';

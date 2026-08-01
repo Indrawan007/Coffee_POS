@@ -8,7 +8,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
-import '../../../../core/utils/printer_service.dart';
 import '../../../settings/presentation/providers/printer_provider.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
 import '../../data/datasources/transaction_datasource.dart';

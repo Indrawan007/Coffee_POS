@@ -1040,7 +1040,7 @@ class _NonCashInfo extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Icon(
+          const Icon(
             Icons.check_circle,
             color: AppColors.info,
             size: 48,

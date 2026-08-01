@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
-import '../utils/hash_helper.dart';
 
 import 'tables/users_table.dart';
 import 'tables/categories_table.dart';

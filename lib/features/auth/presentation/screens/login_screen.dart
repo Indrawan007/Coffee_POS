@@ -191,9 +191,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
 
                       const SizedBox(height: AppSizes.md),
-                      Text(
+                      const Text(
                         '${AppStrings.appVersion} • Offline Mode',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppColors.textHint,
                           fontSize: 12,
                         ),
