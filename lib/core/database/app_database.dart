@@ -31,6 +31,7 @@ part 'app_database.g.dart';
     CategoryAddonsTable,
     TransactionsTable,
     TransactionItemsTable,
+    SettingsTable, 
     ActivityLogsTable,
   ],
 )
