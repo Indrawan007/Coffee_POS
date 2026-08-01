@@ -155,32 +155,40 @@ class GoogleDriveService {
       final existingFileId =
         await _findBackupFile(folderId);
 
-      // Upload
+      // Upload media
       final media = drive.Media(
         dbFile.openRead(),
         await dbFile.length(),
       );
 
-      final driveFile = drive.File()
-        ..name = _fileName
-        ..parents = [folderId]
-        ..mimeType = 'application/octet-stream'
-        ..description =
-          'Coffee POS Backup - '
-          '${DateTime.now().toIso8601String()}';
-
       if (existingFileId != null) {
-        // Update existing file
+        // ✅ FIX: Update TANPA parents
+        final updateFile = drive.File()
+          ..name = _fileName
+          ..mimeType = 'application/octet-stream'
+          ..description =
+            'Coffee POS Backup - '
+            '${DateTime.now().toIso8601String()}';
+
+        // ✅ Jangan set parents saat update
         await _driveApi!.files.update(
-          driveFile,
+          updateFile,
           existingFileId,
           uploadMedia: media,
         );
         debugPrint('Backup updated on Drive');
       } else {
-        // Create new file
+        // ✅ Create baru DENGAN parents
+        final createFile = drive.File()
+          ..name = _fileName
+          ..parents = [folderId]
+          ..mimeType = 'application/octet-stream'
+          ..description =
+            'Coffee POS Backup - '
+            '${DateTime.now().toIso8601String()}';
+
         await _driveApi!.files.create(
-          driveFile,
+          createFile,
           uploadMedia: media,
         );
         debugPrint('Backup created on Drive');
@@ -193,7 +201,7 @@ class GoogleDriveService {
 
       return SyncResult(
         status: SyncStatus.success,
-        message: 'Backup berhasil di-sync',
+        message: 'Backup berhasil di-sync ✅',
         lastSyncTime: now,
       );
     } catch (e) {
@@ -204,7 +212,6 @@ class GoogleDriveService {
       );
     }
   }
-
   // ─── DOWNLOAD BACKUP ─────────────────────────
   Future<SyncResult> downloadBackup() async {
     try {
