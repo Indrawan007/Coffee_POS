@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:coffee_pos/core/constant/app_colors.dart';
 import 'package:coffee_pos/core/constant/app_sizes.dart';
+import 'package:coffee_pos/core/database/app_database.dart';
+import 'package:coffee_pos/core/utils/hash_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -24,8 +26,11 @@ class _PinLockScreenState extends State<PinLockScreen> {
   bool   _isError    = false;
   bool   _isLocked   = false;
   String _errorMsg   = '';
-  int    _remaining  = 5;
   Timer? _lockTimer;
+
+  // ✅ Emergency unlock
+  int _logoTapCount = 0;
+  Timer? _tapResetTimer;
 
   final _security = SecurityService.instance;
 
@@ -38,21 +43,15 @@ class _PinLockScreenState extends State<PinLockScreen> {
   @override
   void dispose() {
     _lockTimer?.cancel();
+    _tapResetTimer?.cancel();
     super.dispose();
   }
 
   Future<void> _checkLockStatus() async {
     final locked = await _security.isLocked();
-    final remaining = await _security.getRemainingAttempts();
+    setState(() => _isLocked = locked);
 
-    setState(() {
-      _isLocked = locked;
-      _remaining = remaining;
-    });
-
-    if (locked) {
-      _startLockTimer();
-    }
+    if (locked) _startLockTimer();
   }
 
   void _startLockTimer() {
@@ -67,7 +66,6 @@ class _PinLockScreenState extends State<PinLockScreen> {
           _lockTimer?.cancel();
           setState(() {
             _isLocked = false;
-            _remaining = SecurityService.maxFailedAttempts;
             _errorMsg = '';
           });
         } else {
@@ -82,6 +80,51 @@ class _PinLockScreenState extends State<PinLockScreen> {
           });
         }
       },
+    );
+  }
+
+  // ✅ EMERGENCY: Tap logo 7x
+  void _onLogoTap() {
+    _logoTapCount++;
+
+    // Reset counter setelah 3 detik
+    _tapResetTimer?.cancel();
+    _tapResetTimer = Timer(
+      const Duration(seconds: 3),
+      () => _logoTapCount = 0,
+    );
+
+    // Tampilkan progress
+    if (_logoTapCount >= 4 && _logoTapCount < 7) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Tap ${7 - _logoTapCount}x lagi untuk reset',
+          ),
+          duration: const Duration(milliseconds: 800),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+
+    // 7x tap → show emergency dialog
+    if (_logoTapCount >= 7) {
+      _logoTapCount = 0;
+      _showEmergencyResetDialog();
+    }
+  }
+
+  // ✅ EMERGENCY RESET DIALOG
+  void _showEmergencyResetDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => _EmergencyResetDialog(
+        onSuccess: () {
+          Navigator.pop(ctx);
+          widget.onUnlock();
+        },
+      ),
     );
   }
 
@@ -109,7 +152,6 @@ class _PinLockScreenState extends State<PinLockScreen> {
       _isError = false;
     });
 
-    // Auto verify saat 4-6 digit
     if (_enteredPin.length >= 4) {
       _verifyPin();
     }
@@ -129,7 +171,6 @@ class _PinLockScreenState extends State<PinLockScreen> {
       setState(() {
         _isError = true;
         _enteredPin = '';
-        _remaining = remaining;
         _isLocked = locked;
       });
 
@@ -143,7 +184,8 @@ class _PinLockScreenState extends State<PinLockScreen> {
         });
       } else {
         setState(() {
-          _errorMsg = 'PIN salah. Sisa $remaining percobaan.';
+          _errorMsg =
+            'PIN salah. Sisa $remaining percobaan.';
         });
       }
 
@@ -171,20 +213,23 @@ class _PinLockScreenState extends State<PinLockScreen> {
             children: [
               const Spacer(flex: 2),
 
-              // Lock icon
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  _isLocked
-                    ? Icons.lock
-                    : Icons.lock_open,
-                  color: Colors.white,
-                  size: 36,
+              // ✅ Lock icon - TAP 7x untuk emergency
+              GestureDetector(
+                onTap: _onLogoTap,
+                child: Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    _isLocked
+                      ? Icons.lock
+                      : Icons.lock_open,
+                    color: Colors.white,
+                    size: 36,
+                  ),
                 ),
               ),
               const SizedBox(height: AppSizes.md),
@@ -208,7 +253,7 @@ class _PinLockScreenState extends State<PinLockScreen> {
                       style: TextStyle(
                         color: _isLocked
                           ? AppColors.warning
-                          : AppColors.error,
+                          : Colors.redAccent,
                         fontSize: 13,
                       ),
                       textAlign: TextAlign.center,
@@ -216,7 +261,8 @@ class _PinLockScreenState extends State<PinLockScreen> {
                   : Text(
                       'Masukkan PIN 4-6 digit',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.5),
+                        color:
+                          Colors.white.withOpacity(0.5),
                         fontSize: 13,
                       ),
                     ),
@@ -239,6 +285,20 @@ class _PinLockScreenState extends State<PinLockScreen> {
               ),
 
               const Spacer(flex: 1),
+
+              // ✅ Hint text
+              Padding(
+                padding: const EdgeInsets.only(
+                  bottom: AppSizes.lg,
+                ),
+                child: Text(
+                  'Lupa PIN? Tap ikon kunci 7x',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.25),
+                    fontSize: 11,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -247,7 +307,254 @@ class _PinLockScreenState extends State<PinLockScreen> {
   }
 }
 
-// ── PIN DOTS ──────────────────────────────────────
+// ═══════════════════════════════════════════════════
+// EMERGENCY RESET DIALOG
+// ═══════════════════════════════════════════════════
+class _EmergencyResetDialog extends StatefulWidget {
+  const _EmergencyResetDialog({
+    required this.onSuccess,
+  });
+  final VoidCallback onSuccess;
+
+  @override
+  State<_EmergencyResetDialog> createState() =>
+    _EmergencyResetDialogState();
+}
+
+class _EmergencyResetDialogState
+    extends State<_EmergencyResetDialog> {
+
+  final _formKey      = GlobalKey<FormState>();
+  final _usernameCtrl = TextEditingController();
+  final _passwordCtrl = TextEditingController();
+  bool  _isLoading    = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _usernameCtrl.dispose();
+    _passwordCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _onVerify() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final verified = await _verifyAdminAccount(
+        _usernameCtrl.text.trim(),
+        _passwordCtrl.text.trim(),
+      );
+
+      if (verified) {
+        await SecurityService.instance.removePin();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('PIN berhasil direset ✅'),
+              backgroundColor: AppColors.success,
+            ),
+          );
+        }
+
+        widget.onSuccess();
+      } else {
+        setState(() {
+          _error = 'Username atau password admin salah';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _error = 'Gagal verifikasi: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
+  // ✅ FIX: Query database langsung tanpa & operator
+  Future<bool> _verifyAdminAccount(
+    String username,
+    String password,
+  ) async {
+    try {
+      final db   = AppDatabase.instance;
+      final hash = HashHelper.hashPassword(password);
+
+      final user = await (
+        db.select(db.usersTable)
+          ..where((u) => u.username.equals(username))
+          ..where((u) => u.password.equals(hash))
+          ..where((u) => u.role.equals('admin'))
+          ..where((u) => u.isActive.equals(true))
+      ).getSingleOrNull();
+
+      return user != null;
+    } catch (e) {
+      debugPrint('Verify admin error: $e');
+      return false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(
+          AppSizes.radiusLg,
+        ),
+      ),
+      title: const Row(
+        children: [
+          Icon(Icons.emergency, color: AppColors.warning),
+          SizedBox(width: AppSizes.sm),
+          Expanded(
+            child: Text(
+              'Reset PIN Darurat',
+              style: TextStyle(fontSize: 18),
+            ),
+          ),
+        ],
+      ),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(AppSizes.sm),
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(
+                    AppSizes.radiusSm,
+                  ),
+                  border: Border.all(
+                    color: AppColors.warning.withOpacity(0.3),
+                  ),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(
+                      Icons.warning_amber,
+                      color: AppColors.warning,
+                      size: 18,
+                    ),
+                    SizedBox(width: AppSizes.xs),
+                    Expanded(
+                      child: Text(
+                        'Masukkan akun ADMIN untuk '
+                        'mereset PIN aplikasi.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.warning,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSizes.md),
+
+              if (_error != null)
+                Container(
+                  margin: const EdgeInsets.only(
+                    bottom: AppSizes.sm,
+                  ),
+                  padding: const EdgeInsets.all(AppSizes.sm),
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(
+                      AppSizes.radiusSm,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        color: AppColors.error,
+                        size: 16,
+                      ),
+                      const SizedBox(width: AppSizes.xs),
+                      Expanded(
+                        child: Text(
+                          _error!,
+                          style: const TextStyle(
+                            color: AppColors.error,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+              TextFormField(
+                controller: _usernameCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Username Admin',
+                  prefixIcon: Icon(Icons.person_outline),
+                  isDense: true,
+                ),
+                validator: (v) =>
+                  v == null || v.trim().isEmpty
+                    ? 'Wajib diisi'
+                    : null,
+              ),
+              const SizedBox(height: AppSizes.sm),
+
+              TextFormField(
+                controller: _passwordCtrl,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Password Admin',
+                  prefixIcon: Icon(Icons.lock_outline),
+                  isDense: true,
+                ),
+                validator: (v) =>
+                  v == null || v.isEmpty
+                    ? 'Wajib diisi'
+                    : null,
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Batal'),
+        ),
+        ElevatedButton(
+          onPressed: _isLoading ? null : _onVerify,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.warning,
+          ),
+          child: _isLoading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+            : const Text('Reset PIN'),
+        ),
+      ],
+    );
+  }
+}
+// ═══════════════════════════════════════════════════
+// PIN DOTS
+// ═══════════════════════════════════════════════════
 class _PinDots extends StatelessWidget {
   const _PinDots({
     required this.length,
@@ -288,7 +595,9 @@ class _PinDots extends StatelessWidget {
   }
 }
 
-// ── NUM PAD ───────────────────────────────────────
+// ═══════════════════════════════════════════════════
+// NUM PAD
+// ═══════════════════════════════════════════════════
 class _NumPad extends StatelessWidget {
   const _NumPad({
     required this.onKeyTap,
@@ -313,10 +622,14 @@ class _NumPad extends StatelessWidget {
       ),
       child: Column(
         children: keys.map((row) => Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          mainAxisAlignment:
+            MainAxisAlignment.spaceEvenly,
           children: row.map((key) {
             if (key.isEmpty) {
-              return const SizedBox(width: 72, height: 72);
+              return const SizedBox(
+                width: 72,
+                height: 72,
+              );
             }
             return _NumKey(
               label: key,
