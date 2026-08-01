@@ -454,7 +454,7 @@ class _VariantSection extends StatelessWidget {
       children: [
         const _SectionLabel(
           icon: Icons.straighten,
-          label: 'Pilih Size',
+          label: 'Pilih Varian',
           required: true,
         ),
         const SizedBox(height: AppSizes.sm),
