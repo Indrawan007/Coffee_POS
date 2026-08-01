@@ -114,68 +114,52 @@ class AppDatabase extends _$AppDatabase {
       addonMap['no sugar'];
 
     final companions = <CategoryAddonsTableCompanion>[];
-
-    // Coffee → semua addon minuman
+    
     if (coffeeId != null) {
-      if (extraShotId != null) {
-        companions.add(
-          CategoryAddonsTableCompanion.insert(
-            categoryId: coffeeId,
-            addonId: extraShotId,
-          ),
-        );
-      }
-      if (extraMilkId != null) {
-        companions.add(
-          CategoryAddonsTableCompanion.insert(
-            categoryId: coffeeId,
-            addonId: extraMilkId,
-          ),
-        );
-      }
-      if (lessSugarId != null) {
-        companions.add(
-          CategoryAddonsTableCompanion.insert(
-            categoryId: coffeeId,
-            addonId: lessSugarId,
-          ),
-        );
-      }
-      if (noSugarId != null) {
-        companions.add(
-          CategoryAddonsTableCompanion.insert(
-            categoryId: coffeeId,
-            addonId: noSugarId,
-          ),
-        );
+      final coffeeAddons = [
+        'extra shot',
+        'extra milk',
+        'extra whip cream',
+        'gula aren',
+        'less sugar',
+        'less ice',
+        'extra syrup',
+      ];
+
+      for (final name in coffeeAddons) {
+        final id = addonMap[name];
+        if (id != null) {
+          companions.add(
+            CategoryAddonsTableCompanion.insert(
+              categoryId: coffeeId,
+              addonId: id,
+            ),
+          );
+        }
       }
     }
 
-    // Non Coffee → addon tanpa extra shot
+    // ✅ Non Coffee → addon tanpa extra shot
     if (nonCoffeeId != null) {
-      if (extraMilkId != null) {
-        companions.add(
-          CategoryAddonsTableCompanion.insert(
-            categoryId: nonCoffeeId,
-            addonId: extraMilkId,
-          ),
-        );
-      }
-      if (lessSugarId != null) {
-        companions.add(
-          CategoryAddonsTableCompanion.insert(
-            categoryId: nonCoffeeId,
-            addonId: lessSugarId,
-          ),
-        );
-      }
-      if (noSugarId != null) {
-        companions.add(
-          CategoryAddonsTableCompanion.insert(
-            categoryId: nonCoffeeId,
-            addonId: noSugarId,
-          ),
-        );
+      final nonCoffeeAddons = [
+        'extra milk',
+        'extra whip cream',
+        'gula aren',
+        'less sugar',
+        'less ice',
+        'extra syrup',
+      ];
+
+      for (final name in nonCoffeeAddons) {
+        final id = addonMap[name];
+        if (id != null) {
+          companions.add(
+            CategoryAddonsTableCompanion.insert(
+              categoryId: nonCoffeeId,
+              addonId: id,
+            ),
+          );
+        }
       }
     }
 
@@ -282,13 +266,29 @@ class AppDatabase extends _$AppDatabase {
           createdAt: now,
         ),
         AddonsTableCompanion.insert(
+          name: 'Extra Whip Cream',
+          price: const Value(4000),
+          createdAt: now,
+        ),
+        AddonsTableCompanion.insert(
+          name: 'Gula Aren',
+          price: const Value(3000),
+          createdAt: now,
+        ),
+        // ✅ Sugar level jadi 1 opsi saja
+        AddonsTableCompanion.insert(
           name: 'Less Sugar',
           price: const Value(0),
           createdAt: now,
         ),
         AddonsTableCompanion.insert(
-          name: 'No Sugar',
+          name: 'Less Ice',
           price: const Value(0),
+          createdAt: now,
+        ),
+        AddonsTableCompanion.insert(
+          name: 'Extra Syrup',
+          price: const Value(3000),
           createdAt: now,
         ),
       ]);
