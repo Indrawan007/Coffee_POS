@@ -1,5 +1,6 @@
 import 'package:coffee_pos/core/constant/app_colors.dart';
 import 'package:coffee_pos/core/constant/app_sizes.dart';
+import 'package:coffee_pos/features/settings/presentation/screens/backup_screen.dart';
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -253,6 +254,43 @@ class _SettingsScreenState
                     ),
                   ),
 
+                  
+                  const SizedBox(height: AppSizes.lg),
+
+                  // ── BACKUP ──────────────────────
+                  _SectionHeader(
+                    icon: Icons.backup,
+                    title: 'Data',
+                  ),
+                  const SizedBox(height: AppSizes.sm),
+
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(
+                      Icons.backup,
+                      color: AppColors.success,
+                    ),
+                    title: const Text('Backup & Restore'),
+                    subtitle: const Text(
+                      'Cadangkan data untuk keamanan',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const BackupRestoreScreen(),
+                      ),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        AppSizes.radiusMd,
+                      ),
+                      side: const BorderSide(
+                        color: AppColors.border,
+                      ),
+                    ),
+                  ),
+                  
                   const SizedBox(height: AppSizes.xl),
 
                   // ── SAVE BUTTON ───────────────
