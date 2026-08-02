@@ -165,7 +165,7 @@ class _ProductFormScreenState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ── INFO PRODUK ─────────────────
-              _SectionTitle(title: 'Informasi Produk'),
+              const _SectionTitle(title: 'Informasi Produk'),
               const SizedBox(height: AppSizes.sm),
 
               AppTextField(
@@ -271,7 +271,7 @@ class _ProductFormScreenState
               const SizedBox(height: AppSizes.lg),
               Row(
                 children: [
-                  _SectionTitle(title: 'Varian'),
+                  const _SectionTitle(title: 'Varian'),
                   const Spacer(),
                   TextButton.icon(
                     onPressed: _addVariant,

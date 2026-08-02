@@ -25,7 +25,6 @@ class _PinLockScreenState extends State<PinLockScreen> {
   bool _isError = false;
   bool _isLocked = false;
   String _errorMsg = '';
-  int _savedPinLength = 4;
   int _logoTapCount = 0;
   Timer? _lockTimer;
   Timer? _tapResetTimer;
@@ -36,7 +35,6 @@ class _PinLockScreenState extends State<PinLockScreen> {
   void initState() {
     super.initState();
     _checkLockStatus();
-    _loadPinLength();
   }
 
   @override
@@ -44,13 +42,6 @@ class _PinLockScreenState extends State<PinLockScreen> {
     _lockTimer?.cancel();
     _tapResetTimer?.cancel();
     super.dispose();
-  }
-
-  Future<void> _loadPinLength() async {
-    final pin = await _security.getPin();
-    if (pin != null && mounted) {
-      setState(() => _savedPinLength = pin.length);
-    }
   }
 
   Future<void> _checkLockStatus() async {
@@ -94,7 +85,9 @@ class _PinLockScreenState extends State<PinLockScreen> {
     if (_logoTapCount >= 4 && _logoTapCount < 7) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Tap ${7 - _logoTapCount}x lagi untuk reset'),
+          content: Text(
+            'Tap ${7 - _logoTapCount}x lagi untuk reset',
+          ),
           duration: const Duration(milliseconds: 800),
           behavior: SnackBarBehavior.floating,
         ),
@@ -123,7 +116,10 @@ class _PinLockScreenState extends State<PinLockScreen> {
     if (key == 'delete') {
       if (_enteredPin.isNotEmpty) {
         setState(() {
-          _enteredPin = _enteredPin.substring(0, _enteredPin.length - 1);
+          _enteredPin = _enteredPin.substring(
+            0,
+            _enteredPin.length - 1,
+          );
           _isError = false;
           _errorMsg = '';
         });
@@ -131,6 +127,7 @@ class _PinLockScreenState extends State<PinLockScreen> {
       return;
     }
 
+    // ✅ Max 6 digit
     if (_enteredPin.length >= 6) return;
 
     setState(() {
@@ -139,21 +136,10 @@ class _PinLockScreenState extends State<PinLockScreen> {
       _errorMsg = '';
     });
 
-    if (_enteredPin.length == _savedPinLength) {
+    // ✅ Auto verify saat tepat 6 digit
+    if (_enteredPin.length == 6) {
       _verifyPin();
     }
-  }
-
-  Future<void> _onSubmit() async {
-    if (_enteredPin.length < 4) {
-      setState(() {
-        _isError = true;
-        _errorMsg = 'PIN minimal 4 digit';
-      });
-      HapticFeedback.heavyImpact();
-      return;
-    }
-    await _verifyPin();
   }
 
   Future<void> _verifyPin() async {
@@ -177,7 +163,8 @@ class _PinLockScreenState extends State<PinLockScreen> {
         _startLockTimer();
         setState(() {
           _errorMsg = 'Terlalu banyak percobaan.\n'
-              'Tunggu ${SecurityService.lockDurationMinutes} menit.';
+              'Tunggu ${SecurityService.lockDurationMinutes} '
+              'menit.';
         });
       } else {
         setState(() {
@@ -205,6 +192,7 @@ class _PinLockScreenState extends State<PinLockScreen> {
             children: [
               const Spacer(flex: 2),
 
+              // Logo - tap 7x untuk emergency
               GestureDetector(
                 onTap: _onLogoTap,
                 child: Container(
@@ -233,21 +221,21 @@ class _PinLockScreenState extends State<PinLockScreen> {
               ),
               const SizedBox(height: AppSizes.sm),
 
+              // Error / hint
               SizedBox(
                 height: 40,
                 child: _errorMsg.isNotEmpty
                     ? Text(
                         _errorMsg,
                         style: TextStyle(
-                          color: _isLocked ? AppColors.warning : Colors.redAccent,
+                          color:
+                              _isLocked ? AppColors.warning : Colors.redAccent,
                           fontSize: 13,
                         ),
                         textAlign: TextAlign.center,
                       )
                     : Text(
-                        _enteredPin.isEmpty
-                            ? 'Masukkan PIN Anda'
-                            : '${_enteredPin.length} digit dimasukkan',
+                        'Masukkan 6 digit PIN',
                         style: TextStyle(
                           color: Colors.white.withOpacity(0.5),
                           fontSize: 13,
@@ -257,10 +245,10 @@ class _PinLockScreenState extends State<PinLockScreen> {
 
               const SizedBox(height: AppSizes.lg),
 
-              // PIN dots
+              // ✅ PIN dots - selalu 6
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(_savedPinLength, (i) {
+                children: List.generate(6, (i) {
                   final filled = i < _enteredPin.length;
                   return AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
@@ -312,7 +300,7 @@ class _PinLockScreenState extends State<PinLockScreen> {
       ['1', '2', '3'],
       ['4', '5', '6'],
       ['7', '8', '9'],
-      ['delete', '0', 'ok'],
+      ['', '0', 'delete'],
     ];
 
     return Padding(
@@ -322,8 +310,10 @@ class _PinLockScreenState extends State<PinLockScreen> {
             .map((row) => Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: row.map((key) {
-                    if (key == 'ok') return _buildOkButton();
-                    return _buildNumKey(key);
+                    if (key.isEmpty) {
+                      return const SizedBox(width: 72, height: 72);
+                    }
+                    return _buildKey(key);
                   }).toList(),
                 ))
             .toList(),
@@ -331,7 +321,7 @@ class _PinLockScreenState extends State<PinLockScreen> {
     );
   }
 
-  Widget _buildNumKey(String label) {
+  Widget _buildKey(String label) {
     return Padding(
       padding: const EdgeInsets.all(6),
       child: Material(
@@ -344,54 +334,29 @@ class _PinLockScreenState extends State<PinLockScreen> {
             height: 72,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white.withOpacity(_isLocked ? 0.05 : 0.1),
+              color: Colors.white.withOpacity(
+                _isLocked ? 0.05 : 0.1,
+              ),
             ),
             alignment: Alignment.center,
             child: label == 'delete'
                 ? Icon(
                     Icons.backspace_outlined,
-                    color: Colors.white.withOpacity(_isLocked ? 0.3 : 0.8),
+                    color: Colors.white.withOpacity(
+                      _isLocked ? 0.3 : 0.8,
+                    ),
                     size: 24,
                   )
                 : Text(
                     label,
                     style: TextStyle(
-                      color: Colors.white.withOpacity(_isLocked ? 0.3 : 1.0),
+                      color: Colors.white.withOpacity(
+                        _isLocked ? 0.3 : 1.0,
+                      ),
                       fontSize: 28,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildOkButton() {
-    final enabled = !_isLocked && _enteredPin.length >= 4;
-
-    return Padding(
-      padding: const EdgeInsets.all(6),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: enabled ? _onSubmit : null,
-          borderRadius: BorderRadius.circular(36),
-          child: Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: enabled
-                  ? AppColors.success.withOpacity(0.8)
-                  : Colors.white.withOpacity(0.05),
-            ),
-            alignment: Alignment.center,
-            child: Icon(
-              Icons.check,
-              color: enabled ? Colors.white : Colors.white.withOpacity(0.2),
-              size: 32,
-            ),
           ),
         ),
       ),
@@ -407,8 +372,7 @@ class _EmergencyResetDialog extends StatefulWidget {
   final VoidCallback onSuccess;
 
   @override
-  State<_EmergencyResetDialog> createState() =>
-      _EmergencyResetDialogState();
+  State<_EmergencyResetDialog> createState() => _EmergencyResetDialogState();
 }
 
 class _EmergencyResetDialogState extends State<_EmergencyResetDialog> {
@@ -436,10 +400,14 @@ class _EmergencyResetDialogState extends State<_EmergencyResetDialog> {
 
     try {
       final db = AppDatabase.instance;
-      final hash = HashHelper.hashPassword(_passwordCtrl.text.trim());
+      final hash = HashHelper.hashPassword(
+        _passwordCtrl.text.trim(),
+      );
 
       final user = await (db.select(db.usersTable)
-            ..where((u) => u.username.equals(_usernameCtrl.text.trim()))
+            ..where((u) => u.username.equals(
+                  _usernameCtrl.text.trim(),
+                ))
             ..where((u) => u.password.equals(hash))
             ..where((u) => u.role.equals('admin'))
             ..where((u) => u.isActive.equals(true)))
@@ -464,7 +432,7 @@ class _EmergencyResetDialogState extends State<_EmergencyResetDialog> {
       }
     } catch (e) {
       setState(() {
-        _error = 'Gagal verifikasi: $e';
+        _error = 'Gagal: $e';
         _isLoading = false;
       });
     }
@@ -497,38 +465,50 @@ class _EmergencyResetDialogState extends State<_EmergencyResetDialog> {
                       color: AppColors.warning.withOpacity(0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.lock_reset,
-                        color: AppColors.warning, size: 32),
+                    child: const Icon(
+                      Icons.lock_reset,
+                      color: AppColors.warning,
+                      size: 32,
+                    ),
                   ),
                   const SizedBox(height: AppSizes.md),
-                  const Text('Reset PIN Darurat',
-                      style: TextStyle(
-                          fontSize: 20, fontWeight: FontWeight.bold)),
+                  const Text(
+                    'Reset PIN Darurat',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: AppSizes.xs),
                   const Text(
-                    'Verifikasi akun Admin untuk\nmereset PIN aplikasi',
+                    'Masukkan akun Admin\nuntuk mereset PIN',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                        color: AppColors.textSecondary, fontSize: 13),
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                    ),
                   ),
                   const SizedBox(height: AppSizes.lg),
-
                   if (_error != null) ...[
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(AppSizes.sm),
                       decoration: BoxDecoration(
                         color: AppColors.error.withOpacity(0.1),
-                        borderRadius:
-                            BorderRadius.circular(AppSizes.radiusSm),
+                        borderRadius: BorderRadius.circular(
+                          AppSizes.radiusSm,
+                        ),
                       ),
-                      child: Text(_error!,
-                          style: const TextStyle(
-                              color: AppColors.error, fontSize: 12)),
+                      child: Text(
+                        _error!,
+                        style: const TextStyle(
+                          color: AppColors.error,
+                          fontSize: 12,
+                        ),
+                      ),
                     ),
                     const SizedBox(height: AppSizes.md),
                   ],
-
                   TextFormField(
                     controller: _usernameCtrl,
                     textInputAction: TextInputAction.next,
@@ -536,15 +516,15 @@ class _EmergencyResetDialogState extends State<_EmergencyResetDialog> {
                       labelText: 'Username Admin',
                       prefixIcon: const Icon(Icons.person_outline),
                       border: OutlineInputBorder(
-                        borderRadius:
-                            BorderRadius.circular(AppSizes.radiusMd),
+                        borderRadius: BorderRadius.circular(
+                          AppSizes.radiusMd,
+                        ),
                       ),
                     ),
                     validator: (v) =>
                         v == null || v.trim().isEmpty ? 'Wajib diisi' : null,
                   ),
                   const SizedBox(height: AppSizes.md),
-
                   TextFormField(
                     controller: _passwordCtrl,
                     obscureText: _obscure,
@@ -554,22 +534,23 @@ class _EmergencyResetDialogState extends State<_EmergencyResetDialog> {
                       labelText: 'Password Admin',
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
-                        icon: Icon(_obscure
-                            ? Icons.visibility_off
-                            : Icons.visibility),
-                        onPressed: () =>
-                            setState(() => _obscure = !_obscure),
+                        icon: Icon(
+                          _obscure ? Icons.visibility_off : Icons.visibility,
+                        ),
+                        onPressed: () => setState(
+                          () => _obscure = !_obscure,
+                        ),
                       ),
                       border: OutlineInputBorder(
-                        borderRadius:
-                            BorderRadius.circular(AppSizes.radiusMd),
+                        borderRadius: BorderRadius.circular(
+                          AppSizes.radiusMd,
+                        ),
                       ),
                     ),
                     validator: (v) =>
                         v == null || v.isEmpty ? 'Wajib diisi' : null,
                   ),
                   const SizedBox(height: AppSizes.xl),
-
                   Row(
                     children: [
                       Expanded(
@@ -596,12 +577,17 @@ class _EmergencyResetDialogState extends State<_EmergencyResetDialog> {
                                     width: 18,
                                     height: 18,
                                     child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white),
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
                                   )
-                                : const Icon(Icons.lock_reset, size: 18),
+                                : const Icon(
+                                    Icons.lock_reset,
+                                    size: 18,
+                                  ),
                             label: Text(
-                                _isLoading ? 'Verifikasi...' : 'Reset PIN'),
+                              _isLoading ? 'Verifikasi...' : 'Reset PIN',
+                            ),
                           ),
                         ),
                       ),

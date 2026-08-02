@@ -256,11 +256,11 @@ class _SettingsScreenState
                     ),
                   ),
 
-                  
+
                   const SizedBox(height: AppSizes.lg),
 
                   // ── BACKUP ──────────────────────
-                  _SectionHeader(
+                  const _SectionHeader(
                     icon: Icons.backup,
                     title: 'Data',
                   ),
@@ -292,7 +292,7 @@ class _SettingsScreenState
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: AppSizes.sm),
 
                   ListTile(
@@ -351,7 +351,7 @@ class _SettingsScreenState
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: AppSizes.xl),
 
                   // ── SAVE BUTTON ───────────────

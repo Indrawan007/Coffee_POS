@@ -416,7 +416,7 @@ class _ProductHeader extends StatelessWidget {
         IconButton(
           icon: Container(
             padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AppColors.border,
               shape: BoxShape.circle,
             ),

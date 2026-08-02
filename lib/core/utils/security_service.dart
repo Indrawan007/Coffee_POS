@@ -5,14 +5,14 @@ class SecurityService {
   SecurityService._();
   static final SecurityService instance = SecurityService._();
 
-  static const _prefPin           = 'app_pin';
-  static const _prefPinEnabled    = 'pin_enabled';
-  static const _prefAutoLock      = 'auto_lock_enabled';
+  static const _prefPin = 'app_pin';
+  static const _prefPinEnabled = 'pin_enabled';
+  static const _prefAutoLock = 'auto_lock_enabled';
   static const _prefAutoLockDelay = 'auto_lock_delay';
   static const _prefSessionTimeout = 'session_timeout';
   static const _prefFailedAttempts = 'failed_attempts';
-  static const _prefLockedUntil   = 'locked_until';
-  static const _prefLastActivity  = 'last_activity';
+  static const _prefLockedUntil = 'locked_until';
+  static const _prefLastActivity = 'last_activity';
 
   static const maxFailedAttempts = 5;
   static const lockDurationMinutes = 5;
@@ -25,6 +25,9 @@ class SecurityService {
   }
 
   Future<void> setPin(String pin) async {
+    if (pin.length != 6) {
+      throw Exception('PIN harus 6 digit');
+    }
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_prefPin, pin);
     await prefs.setBool(_prefPinEnabled, true);

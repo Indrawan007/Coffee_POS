@@ -1,13 +1,13 @@
 import 'package:coffee_pos/core/constant/app_colors.dart';
 import 'package:coffee_pos/core/constant/app_sizes.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/utils/security_service.dart';
 import '../../../../shared/widgets/app_dialog.dart';
 import '../../../../shared/widgets/app_text_field.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
-import '../../../users/data/datasources/user_datasource.dart';
 import '../../../users/presentation/providers/user_provider.dart';
 
 class SecuritySettingsScreen extends ConsumerStatefulWidget {
@@ -15,19 +15,18 @@ class SecuritySettingsScreen extends ConsumerStatefulWidget {
 
   @override
   ConsumerState<SecuritySettingsScreen> createState() =>
-    _SecuritySettingsScreenState();
+      _SecuritySettingsScreenState();
 }
 
 class _SecuritySettingsScreenState
     extends ConsumerState<SecuritySettingsScreen> {
-
   final _security = SecurityService.instance;
 
-  bool _pinEnabled     = false;
-  bool _autoLock       = true;
-  int  _autoLockDelay  = 1;
-  int  _sessionTimeout = 60;
-  bool _isLoading      = true;
+  bool _pinEnabled = false;
+  bool _autoLock = true;
+  int _autoLockDelay = 1;
+  int _sessionTimeout = 60;
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -36,18 +35,18 @@ class _SecuritySettingsScreenState
   }
 
   Future<void> _loadSettings() async {
-    final pin     = await _security.isPinEnabled();
-    final auto    = await _security.isAutoLockEnabled();
-    final delay   = await _security.getAutoLockDelay();
+    final pin = await _security.isPinEnabled();
+    final auto = await _security.isAutoLockEnabled();
+    final delay = await _security.getAutoLockDelay();
     final timeout = await _security.getSessionTimeout();
 
     if (mounted) {
       setState(() {
-        _pinEnabled     = pin;
-        _autoLock       = auto;
-        _autoLockDelay  = delay;
+        _pinEnabled = pin;
+        _autoLock = auto;
+        _autoLockDelay = delay;
         _sessionTimeout = timeout;
-        _isLoading      = false;
+        _isLoading = false;
       });
     }
   }
@@ -65,201 +64,191 @@ class _SecuritySettingsScreenState
         ),
       ),
       body: _isLoading
-        ? const Center(child: CircularProgressIndicator())
-        : ListView(
-            padding: const EdgeInsets.all(AppSizes.md),
-            children: [
-              // ── PIN LOCK ──────────────────
-              _SectionCard(
-                icon: Icons.pin,
-                title: 'Kunci PIN',
-                children: [
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Aktifkan PIN'),
-                    subtitle: const Text(
-                      'Kunci app dengan PIN saat dibuka',
-                    ),
-                    value: _pinEnabled,
-                    activeColor: AppColors.primary,
-                    onChanged: (val) async {
-                      if (val) {
-                        _showSetPinDialog();
-                      } else {
-                        final confirm =
-                          await AppDialog.confirm(
-                            context,
-                            title: 'Nonaktifkan PIN',
-                            message:
-                              'Yakin ingin menonaktifkan '
-                              'kunci PIN?',
-                            confirmColor: AppColors.error,
-                          );
-                        if (confirm == true) {
-                          await _security.removePin();
-                          setState(
-                            () => _pinEnabled = false,
-                          );
-                        }
-                      }
-                    },
-                  ),
-                  if (_pinEnabled) ...[
-                    const Divider(),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Ubah PIN'),
-                      trailing: const Icon(
-                        Icons.chevron_right,
-                      ),
-                      onTap: _showChangePinDialog,
-                    ),
-                  ],
-                ],
-              ),
-              const SizedBox(height: AppSizes.md),
-
-              // ── AUTO LOCK ─────────────────
-              if (_pinEnabled)
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
+              padding: const EdgeInsets.all(AppSizes.md),
+              children: [
+                // ── PIN LOCK ──────────────────
                 _SectionCard(
-                  icon: Icons.timer,
-                  title: 'Auto Lock',
+                  icon: Icons.pin,
+                  title: 'Kunci PIN',
                   children: [
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Auto Lock'),
+                      title: const Text('Aktifkan PIN'),
                       subtitle: const Text(
-                        'Kunci otomatis saat app '
-                        'di-background',
+                        'Kunci app dengan PIN saat dibuka',
                       ),
-                      value: _autoLock,
+                      value: _pinEnabled,
                       activeColor: AppColors.primary,
                       onChanged: (val) async {
-                        await _security.setAutoLock(val);
-                        setState(
-                          () => _autoLock = val,
-                        );
+                        if (val) {
+                          _showSetPinDialog();
+                        } else {
+                          final confirm = await AppDialog.confirm(
+                            context,
+                            title: 'Nonaktifkan PIN',
+                            message: 'Yakin ingin menonaktifkan '
+                                'kunci PIN?',
+                            confirmColor: AppColors.error,
+                          );
+                          if (confirm == true) {
+                            await _security.removePin();
+                            setState(
+                              () => _pinEnabled = false,
+                            );
+                          }
+                        }
                       },
                     ),
-                    if (_autoLock) ...[
+                    if (_pinEnabled) ...[
                       const Divider(),
                       ListTile(
                         contentPadding: EdgeInsets.zero,
-                        title: const Text(
-                          'Delay Auto Lock',
+                        title: const Text('Ubah PIN'),
+                        trailing: const Icon(
+                          Icons.chevron_right,
                         ),
-                        subtitle: Text(
-                          '$_autoLockDelay menit',
-                        ),
-                        trailing:
-                          DropdownButton<int>(
-                            value: _autoLockDelay,
-                            underline:
-                              const SizedBox.shrink(),
-                            items: [1, 3, 5, 10, 15]
-                              .map((v) =>
-                                DropdownMenuItem(
-                                  value: v,
-                                  child: Text('$v menit'),
-                                ),
-                              )
-                              .toList(),
-                            onChanged: (val) async {
-                              if (val != null) {
-                                await _security
-                                  .setAutoLockDelay(val);
-                                setState(() =>
-                                  _autoLockDelay = val,
-                                );
-                              }
-                            },
-                          ),
+                        onTap: _showChangePinDialog,
                       ),
                     ],
                   ],
                 ),
-
-              if (_pinEnabled)
                 const SizedBox(height: AppSizes.md),
 
-              // ── SESSION TIMEOUT ───────────
-              _SectionCard(
-                icon: Icons.access_time,
-                title: 'Session Timeout',
-                children: [
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text(
-                      'Logout Otomatis',
-                    ),
-                    subtitle: Text(
-                      'Setelah $_sessionTimeout menit '
-                      'tidak aktif',
-                    ),
-                    trailing: DropdownButton<int>(
-                      value: _sessionTimeout,
-                      underline: const SizedBox.shrink(),
-                      items: [15, 30, 60, 120, 480]
-                        .map((v) =>
-                          DropdownMenuItem(
-                            value: v,
-                            child: Text(
-                              v < 60
-                                ? '$v menit'
-                                : '${v ~/ 60} jam',
-                            ),
-                          ),
-                        )
-                        .toList(),
-                      onChanged: (val) async {
-                        if (val != null) {
-                          await _security
-                            .setSessionTimeout(val);
-                          setState(() =>
-                            _sessionTimeout = val,
+                // ── AUTO LOCK ─────────────────
+                if (_pinEnabled)
+                  _SectionCard(
+                    icon: Icons.timer,
+                    title: 'Auto Lock',
+                    children: [
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Auto Lock'),
+                        subtitle: const Text(
+                          'Kunci otomatis saat app '
+                          'di-background',
+                        ),
+                        value: _autoLock,
+                        activeColor: AppColors.primary,
+                        onChanged: (val) async {
+                          await _security.setAutoLock(val);
+                          setState(
+                            () => _autoLock = val,
                           );
-                        }
-                      },
-                    ),
+                        },
+                      ),
+                      if (_autoLock) ...[
+                        const Divider(),
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: const Text(
+                            'Delay Auto Lock',
+                          ),
+                          subtitle: Text(
+                            '$_autoLockDelay menit',
+                          ),
+                          trailing: DropdownButton<int>(
+                            value: _autoLockDelay,
+                            underline: const SizedBox.shrink(),
+                            items: [1, 3, 5, 10, 15]
+                                .map(
+                                  (v) => DropdownMenuItem(
+                                    value: v,
+                                    child: Text('$v menit'),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (val) async {
+                              if (val != null) {
+                                await _security.setAutoLockDelay(val);
+                                setState(
+                                  () => _autoLockDelay = val,
+                                );
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                ],
-              ),
-              const SizedBox(height: AppSizes.md),
 
-              // ── CHANGE PASSWORD ───────────
-              _SectionCard(
-                icon: Icons.password,
-                title: 'Password',
-                children: [
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Ganti Password'),
-                    subtitle: const Text(
-                      'Ubah password akun Anda',
+                if (_pinEnabled) const SizedBox(height: AppSizes.md),
+
+                // ── SESSION TIMEOUT ───────────
+                _SectionCard(
+                  icon: Icons.access_time,
+                  title: 'Session Timeout',
+                  children: [
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text(
+                        'Logout Otomatis',
+                      ),
+                      subtitle: Text(
+                        'Setelah $_sessionTimeout menit '
+                        'tidak aktif',
+                      ),
+                      trailing: DropdownButton<int>(
+                        value: _sessionTimeout,
+                        underline: const SizedBox.shrink(),
+                        items: [15, 30, 60, 120, 480]
+                            .map(
+                              (v) => DropdownMenuItem(
+                                value: v,
+                                child: Text(
+                                  v < 60 ? '$v menit' : '${v ~/ 60} jam',
+                                ),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (val) async {
+                          if (val != null) {
+                            await _security.setSessionTimeout(val);
+                            setState(
+                              () => _sessionTimeout = val,
+                            );
+                          }
+                        },
+                      ),
                     ),
-                    trailing: const Icon(
-                      Icons.chevron_right,
-                    ),
-                    onTap: () =>
-                      _showChangePasswordDialog(
+                  ],
+                ),
+                const SizedBox(height: AppSizes.md),
+
+                // ── CHANGE PASSWORD ───────────
+                _SectionCard(
+                  icon: Icons.password,
+                  title: 'Password',
+                  children: [
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Ganti Password'),
+                      subtitle: const Text(
+                        'Ubah password akun Anda',
+                      ),
+                      trailing: const Icon(
+                        Icons.chevron_right,
+                      ),
+                      onTap: () => _showChangePasswordDialog(
                         authState.user?.id,
                       ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSizes.md),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSizes.md),
 
-              // ── INFO ──────────────────────
-              _SecurityInfoCard(),
+                // ── INFO ──────────────────────
+                _SecurityInfoCard(),
 
-              const SizedBox(height: AppSizes.xl),
-            ],
-          ),
+                const SizedBox(height: AppSizes.xl),
+              ],
+            ),
     );
   }
 
   // ── SET PIN DIALOG ────────────────────────────
-  void _showSetPinDialog() {
+void _showSetPinDialog() {
     String pin = '';
     String confirmPin = '';
     bool isConfirmStep = false;
@@ -270,17 +259,15 @@ class _SecuritySettingsScreenState
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
           title: Text(
-            isConfirmStep
-              ? 'Konfirmasi PIN'
-              : 'Buat PIN Baru',
+            isConfirmStep ? 'Konfirmasi PIN' : 'Buat PIN Baru',
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 isConfirmStep
-                  ? 'Masukkan PIN sekali lagi'
-                  : 'Masukkan PIN 4-6 digit',
+                    ? 'Masukkan PIN sekali lagi'
+                    : 'Masukkan 6 digit PIN',
               ),
               const SizedBox(height: AppSizes.md),
               TextField(
@@ -295,7 +282,12 @@ class _SecuritySettingsScreenState
                 ),
                 decoration: const InputDecoration(
                   counterText: '',
+                  hintText: '● ● ● ● ● ●',
                 ),
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(6),
+                ],
                 onChanged: (val) {
                   if (isConfirmStep) {
                     confirmPin = val;
@@ -314,48 +306,44 @@ class _SecuritySettingsScreenState
             ElevatedButton(
               onPressed: () async {
                 if (!isConfirmStep) {
-                  if (pin.length < 4) {
-                    ScaffoldMessenger.of(context)
-                      .showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'PIN minimal 4 digit',
-                          ),
+                  // ✅ Harus 6 digit
+                  if (pin.length != 6) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'PIN harus 6 digit',
                         ),
-                      );
+                      ),
+                    );
                     return;
                   }
-                  setDialogState(() {
-                    isConfirmStep = true;
-                  });
+                  setDialogState(
+                    () => isConfirmStep = true,
+                  );
                 } else {
                   if (confirmPin != pin) {
-                    ScaffoldMessenger.of(context)
-                      .showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'PIN tidak cocok',
-                          ),
-                          backgroundColor:
-                            AppColors.error,
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'PIN tidak cocok',
                         ),
-                      );
+                        backgroundColor: AppColors.error,
+                      ),
+                    );
                     return;
                   }
                   await _security.setPin(pin);
                   setState(() => _pinEnabled = true);
                   if (ctx.mounted) Navigator.pop(ctx);
                   if (mounted) {
-                    ScaffoldMessenger.of(context)
-                      .showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'PIN berhasil dibuat ✅',
-                          ),
-                          backgroundColor:
-                            AppColors.success,
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'PIN berhasil dibuat ✅',
                         ),
-                      );
+                        backgroundColor: AppColors.success,
+                      ),
+                    );
                   }
                 }
               },
@@ -378,10 +366,10 @@ class _SecuritySettingsScreenState
   void _showChangePasswordDialog(int? userId) {
     if (userId == null) return;
 
-    final oldCtrl     = TextEditingController();
-    final newCtrl     = TextEditingController();
+    final oldCtrl = TextEditingController();
+    final newCtrl = TextEditingController();
     final confirmCtrl = TextEditingController();
-    final formKey     = GlobalKey<FormState>();
+    final formKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
@@ -396,10 +384,7 @@ class _SecuritySettingsScreenState
                 label: 'Password Lama',
                 controller: oldCtrl,
                 isPassword: true,
-                validator: (v) =>
-                  v == null || v.isEmpty
-                    ? 'Wajib diisi'
-                    : null,
+                validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null,
               ),
               const SizedBox(height: AppSizes.sm),
               AppTextField(
@@ -421,10 +406,7 @@ class _SecuritySettingsScreenState
                 label: 'Konfirmasi',
                 controller: confirmCtrl,
                 isPassword: true,
-                validator: (v) =>
-                  v != newCtrl.text
-                    ? 'Tidak cocok'
-                    : null,
+                validator: (v) => v != newCtrl.text ? 'Tidak cocok' : null,
               ),
             ],
           ),
@@ -454,27 +436,23 @@ class _SecuritySettingsScreenState
                 if (ctx.mounted) Navigator.pop(ctx);
 
                 if (mounted) {
-                  ScaffoldMessenger.of(context)
-                    .showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Password berhasil diubah ✅',
-                        ),
-                        backgroundColor:
-                          AppColors.success,
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Password berhasil diubah ✅',
                       ),
-                    );
+                      backgroundColor: AppColors.success,
+                    ),
+                  );
                 }
               } catch (e) {
                 if (mounted) {
-                  ScaffoldMessenger.of(context)
-                    .showSnackBar(
-                      SnackBar(
-                        content: Text('Gagal: $e'),
-                        backgroundColor:
-                          AppColors.error,
-                      ),
-                    );
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Gagal: $e'),
+                      backgroundColor: AppColors.error,
+                    ),
+                  );
                 }
               }
             },

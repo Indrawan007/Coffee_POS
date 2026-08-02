@@ -326,7 +326,7 @@ class GoogleDriveService {
   // ─── FOLDER HELPERS ───────────────────────────
   Future<String> _getOrCreateFolder() async {
     // Search folder
-    final query =
+    const query =
       "name='$_folderName' and "
       "mimeType='application/vnd.google-apps.folder' and "
       "trashed=false";
