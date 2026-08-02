@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'dart:io';
 
 // Tambah di atas file
 import 'dart:typed_data';
@@ -45,9 +46,14 @@ class _ExportOption extends StatelessWidget {
         borderRadius: BorderRadius.circular(
           AppSizes.radiusMd,
         ),
-        child: Container(
-          padding: const EdgeInsets.all(AppSizes.md),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.md,
+            vertical: AppSizes.md,
+          ),
           decoration: BoxDecoration(
+            color: AppColors.surface,
             border: Border.all(color: AppColors.border),
             borderRadius: BorderRadius.circular(
               AppSizes.radiusMd,
@@ -55,18 +61,26 @@ class _ExportOption extends StatelessWidget {
           ),
           child: Row(
             children: [
+              // Icon
               Container(
-                width: 44,
-                height: 44,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
                   color: iconColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(
-                    AppSizes.radiusSm,
+                    AppSizes.radiusMd,
                   ),
                 ),
-                child: Icon(icon, color: iconColor),
+                child: Icon(
+                  icon,
+                  color: iconColor,
+                  size: 22,
+                ),
               ),
+
               const SizedBox(width: AppSizes.md),
+
+              // Text
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -75,9 +89,10 @@ class _ExportOption extends StatelessWidget {
                       label,
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
-                        fontSize: 14,
+                        fontSize: 15,
                       ),
                     ),
+                    const SizedBox(height: 2),
                     Text(
                       subtitle,
                       style: const TextStyle(
@@ -88,9 +103,20 @@ class _ExportOption extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(
-                Icons.chevron_right,
-                color: AppColors.textHint,
+
+              // Arrow
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceVar,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.arrow_forward_ios,
+                  size: 14,
+                  color: AppColors.textHint,
+                ),
               ),
             ],
           ),
@@ -99,6 +125,7 @@ class _ExportOption extends StatelessWidget {
     );
   }
 }
+
 class ReportScreen extends ConsumerWidget {
   const ReportScreen({super.key});
 
@@ -174,236 +201,91 @@ class ReportScreen extends ConsumerWidget {
   }
 
   // ✅ Method _showExportSuccess SEBELUM _onExport
-  void _showExportSuccess(
+void _showExportSuccess(
     BuildContext context,
     ExportResult result,
   ) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppSizes.radiusXl),
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isWide = screenWidth >= 600;
+
+    final content = _ExportSuccessContent(result: result);
+
+    if (isWide) {
+      showDialog(
+        context: context,
+        builder: (ctx) => Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(
+              AppSizes.radiusXl,
+            ),
+          ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: 420,
+            ),
+            child: content,
+          ),
         ),
-      ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(AppSizes.lg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: AppColors.success.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.check_circle,
-                color: AppColors.success,
-                size: 36,
-              ),
-            ),
-            const SizedBox(height: AppSizes.md),
-            const Text(
-              'Laporan Berhasil Dibuat! ✅',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: AppSizes.sm),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(AppSizes.md),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceVar,
-                borderRadius: BorderRadius.circular(
-                  AppSizes.radiusMd,
-                ),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        result.fileName.endsWith('.pdf')
-                            ? Icons.picture_as_pdf
-                            : Icons.table_chart,
-                        color: result.fileName.endsWith('.pdf')
-                            ? Colors.red
-                            : Colors.green,
-                      ),
-                      const SizedBox(width: AppSizes.sm),
-                      Expanded(
-                        child: Text(
-                          result.fileName,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSizes.xs),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.folder_outlined,
-                        size: 16,
-                        color: AppColors.textHint,
-                      ),
-                      const SizedBox(width: AppSizes.xs),
-                      Expanded(
-                        child: Text(
-                          result.filePath,
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: AppColors.textHint,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSizes.lg),
-            Row(
-              children: [
-                Expanded(
-                  child: SizedBox(
-                    height: 48,
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: const Text('Tutup'),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: AppSizes.md),
-                Expanded(
-                  child: SizedBox(
-                    height: 48,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.pop(ctx);
-                        ExportService.instance.openFile(result.filePath);
-                      },
-                      icon: const Icon(Icons.open_in_new),
-                      label: const Text('Buka File'),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSizes.md),
-          ],
+      );
+    } else {
+      showModalBottomSheet(
+        context: context,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppSizes.radiusXl),
+          ),
         ),
-      ),
-    );
+        builder: (_) => content,
+      );
+    }
   }
 
-  Future<void> _onExport(
+Future<void> _onExport(
     BuildContext context,
     WidgetRef ref,
     String type,
   ) async {
     final date = ref.read(selectedDateProvider);
     final dateStr = DateFormat('yyyyMMdd').format(date);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isWide = screenWidth >= 600;
 
-    // ✅ Bottom sheet pilihan
-    final action = await showModalBottomSheet<String>(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppSizes.radiusXl),
-        ),
-      ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(AppSizes.lg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.border,
-                borderRadius: BorderRadius.circular(2),
+    // ✅ Responsive: Dialog di tablet, BottomSheet di HP
+    final action = isWide
+        ? await showDialog<String>(
+            context: context,
+            builder: (ctx) => Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(
+                  AppSizes.radiusXl,
+                ),
+              ),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: 420,
+                ),
+                child: _ExportSheet(
+                  type: type,
+                  date: date,
+                  isDialog: true,
+                ),
               ),
             ),
-            const SizedBox(height: AppSizes.lg),
-
-            // Icon format
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: type == 'pdf'
-                    ? Colors.red.withOpacity(0.1)
-                    : Colors.green.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                type == 'pdf' ? Icons.picture_as_pdf : Icons.table_chart,
-                color: type == 'pdf' ? Colors.red : Colors.green,
-                size: 28,
+          )
+        : await showModalBottomSheet<String>(
+            context: context,
+            isScrollControlled: true,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(AppSizes.radiusXl),
               ),
             ),
-            const SizedBox(height: AppSizes.sm),
-            Text(
-              type == 'pdf' ? 'Export Laporan PDF' : 'Export Laporan Excel',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+            builder: (ctx) => _ExportSheet(
+              type: type,
+              date: date,
+              isDialog: false,
             ),
-            Text(
-              DateFormat('dd MMMM yyyy', 'id_ID').format(date),
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 13,
-              ),
-            ),
-            const SizedBox(height: AppSizes.lg),
-
-            // ✅ Simpan ke folder lokal
-            _ExportOption(
-              icon: Icons.save_alt,
-              iconColor: AppColors.success,
-              label: 'Simpan ke Penyimpanan',
-              subtitle: 'Folder CoffeePOS_Reports',
-              onTap: () => Navigator.pop(ctx, 'save'),
-            ),
-            const SizedBox(height: AppSizes.sm),
-
-            // ✅ Share / kirim ke app lain
-            _ExportOption(
-              icon: Icons.share,
-              iconColor: AppColors.info,
-              label: 'Bagikan File',
-              subtitle: 'WhatsApp, Email, Drive, dll',
-              onTap: () => Navigator.pop(ctx, 'share'),
-            ),
-
-            // ✅ Preview (PDF only)
-            if (type == 'pdf') ...[
-              const SizedBox(height: AppSizes.sm),
-              _ExportOption(
-                icon: Icons.visibility,
-                iconColor: AppColors.primary,
-                label: 'Preview & Print',
-                subtitle: 'Lihat sebelum simpan / print',
-                onTap: () => Navigator.pop(ctx, 'preview'),
-              ),
-            ],
-
-            const SizedBox(height: AppSizes.lg),
-          ],
-        ),
-      ),
-    );
+          );
 
     if (action == null || !context.mounted) return;
 
@@ -447,7 +329,7 @@ class ReportScreen extends ConsumerWidget {
       final settings = ref.read(settingsStreamProvider).value;
       final export = ExportService.instance;
 
-      // ── PREVIEW (PDF only) ────────────────────
+      // Preview
       if (action == 'preview' && type == 'pdf') {
         final bytes = await export.generatePdfBytes(
           date: date,
@@ -456,9 +338,7 @@ class ReportScreen extends ConsumerWidget {
           transactions: trx,
           settings: settings,
         );
-
         if (context.mounted) Navigator.pop(context);
-
         if (context.mounted) {
           await Printing.layoutPdf(
             onLayout: (_) => bytes,
@@ -494,11 +374,9 @@ class ReportScreen extends ConsumerWidget {
       if (context.mounted) Navigator.pop(context);
       if (!context.mounted) return;
 
-      ExportResult result;
-
-      // ── SHARE ─────────────────────────────────
+      // Share
       if (action == 'share') {
-        result = await export.shareFile(
+        final result = await export.shareFile(
           fileName: fileName,
           bytes: bytes,
           mimeType: type == 'pdf'
@@ -506,7 +384,6 @@ class ReportScreen extends ConsumerWidget {
               : 'application/vnd.openxmlformats-officedocument'
                   '.spreadsheetml.sheet',
         );
-        // Share tidak perlu success sheet
         if (!result.success && result.error != null && context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -518,8 +395,8 @@ class ReportScreen extends ConsumerWidget {
         return;
       }
 
-      // ── SAVE ──────────────────────────────────
-      result = await export.saveToDownloads(
+      // Save
+      final result = await export.saveToDownloads(
         fileName: fileName,
         bytes: bytes,
       );
@@ -1440,4 +1317,396 @@ int _toInt(dynamic value) {
   if (value is double) return value.toInt();
   if (value is String) return int.tryParse(value) ?? 0;
   return 0;
+}
+
+class _ExportSheet extends StatelessWidget {
+  const _ExportSheet({
+    required this.type,
+    required this.date,
+    required this.isDialog,
+  });
+
+  final String type;
+  final DateTime date;
+  final bool isDialog;
+
+  @override
+  Widget build(BuildContext context) {
+    final isPdf = type == 'pdf';
+
+    return Padding(
+      padding: EdgeInsets.all(
+        isDialog ? AppSizes.lg : AppSizes.md,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle (hanya di bottom sheet)
+          if (!isDialog)
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(
+                bottom: AppSizes.md,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+
+          // Close button (hanya di dialog)
+          if (isDialog)
+            Align(
+              alignment: Alignment.centerRight,
+              child: IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.pop(context),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ),
+
+          // ── HEADER ──────────────────────────
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: isPdf
+                  ? Colors.red.withOpacity(0.1)
+                  : Colors.green.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              isPdf ? Icons.picture_as_pdf : Icons.table_chart,
+              color: isPdf ? Colors.red : Colors.green,
+              size: 32,
+            ),
+          ),
+          const SizedBox(height: AppSizes.md),
+
+          Text(
+            isPdf ? 'Export Laporan PDF' : 'Export Laporan Excel',
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: AppSizes.xs),
+
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSizes.md,
+              vertical: AppSizes.xs,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(
+                AppSizes.radiusFull,
+              ),
+            ),
+            child: Text(
+              DateFormat('dd MMMM yyyy', 'id_ID').format(date),
+              style: const TextStyle(
+                color: AppColors.primary,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: AppSizes.lg),
+
+          // ── OPSI ────────────────────────────
+          const Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'Pilih cara export:',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSizes.sm),
+
+          // Simpan
+          _ExportOption(
+            icon: Icons.save_alt,
+            iconColor: AppColors.success,
+            label: 'Simpan ke Penyimpanan',
+            subtitle: 'Folder CoffeePOS_Reports',
+            onTap: () => Navigator.pop(context, 'save'),
+          ),
+          const SizedBox(height: AppSizes.sm),
+
+          // Share
+          _ExportOption(
+            icon: Icons.share,
+            iconColor: AppColors.info,
+            label: 'Bagikan File',
+            subtitle: 'WhatsApp, Email, Drive, dll',
+            onTap: () => Navigator.pop(context, 'share'),
+          ),
+
+          // Preview (PDF only)
+          if (isPdf) ...[
+            const SizedBox(height: AppSizes.sm),
+            _ExportOption(
+              icon: Icons.visibility,
+              iconColor: AppColors.primary,
+              label: 'Preview & Print',
+              subtitle: 'Lihat sebelum simpan / cetak',
+              onTap: () => Navigator.pop(context, 'preview'),
+            ),
+          ],
+
+          // ── INFO ────────────────────────────
+          const SizedBox(height: AppSizes.md),
+
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(AppSizes.sm),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceVar,
+              borderRadius: BorderRadius.circular(
+                AppSizes.radiusSm,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  size: 16,
+                  color: AppColors.textHint,
+                ),
+                const SizedBox(width: AppSizes.xs),
+                Expanded(
+                  child: Text(
+                    isPdf
+                        ? 'PDF cocok untuk dicetak atau dikirim ke owner'
+                        : 'Excel cocok untuk analisis data lebih lanjut',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textHint,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          SizedBox(
+            height: isDialog ? AppSizes.sm : AppSizes.lg,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ExportSuccessContent extends StatelessWidget {
+  const _ExportSuccessContent({required this.result});
+  final ExportResult result;
+
+  @override
+  Widget build(BuildContext context) {
+    final isPdf = result.fileName.endsWith('.pdf');
+
+    return Padding(
+      padding: const EdgeInsets.all(AppSizes.lg),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // ── SUCCESS ICON ──────────────────
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: AppColors.success.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.check_circle,
+              color: AppColors.success,
+              size: 40,
+            ),
+          ),
+          const SizedBox(height: AppSizes.md),
+
+          const Text(
+            'Berhasil! 🎉',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: AppSizes.xs),
+          const Text(
+            'Laporan berhasil disimpan',
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 13,
+            ),
+          ),
+
+          const SizedBox(height: AppSizes.lg),
+
+          // ── FILE INFO ─────────────────────
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(AppSizes.md),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceVar,
+              borderRadius: BorderRadius.circular(
+                AppSizes.radiusMd,
+              ),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Column(
+              children: [
+                // File name
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: isPdf
+                            ? Colors.red.withOpacity(0.1)
+                            : Colors.green.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(
+                          AppSizes.radiusSm,
+                        ),
+                      ),
+                      child: Icon(
+                        isPdf ? Icons.picture_as_pdf : Icons.table_chart,
+                        color: isPdf ? Colors.red : Colors.green,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: AppSizes.sm),
+                    Expanded(
+                      child: Text(
+                        result.fileName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: AppSizes.sm),
+
+                // Path
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      Icons.folder_outlined,
+                      size: 16,
+                      color: AppColors.textHint,
+                    ),
+                    const SizedBox(width: AppSizes.xs),
+                    Expanded(
+                      child: Text(
+                        result.filePath,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textHint,
+                        ),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: AppSizes.lg),
+
+          // ── BUTTONS ───────────────────────
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 48,
+                  child: OutlinedButton.icon(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(
+                      Icons.check,
+                      size: 18,
+                    ),
+                    label: const Text('Selesai'),
+                    style: OutlinedButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
+                          AppSizes.radiusMd,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSizes.sm),
+              Expanded(
+                child: SizedBox(
+                  height: 48,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      ExportService.instance.openFile(result.filePath);
+                    },
+                    icon: const Icon(
+                      Icons.open_in_new,
+                      size: 18,
+                    ),
+                    label: const Text('Buka File'),
+                    style: ElevatedButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
+                          AppSizes.radiusMd,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: AppSizes.sm),
+
+          // Share button
+          SizedBox(
+            width: double.infinity,
+            height: 44,
+            child: TextButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                ExportService.instance.shareFile(
+                  fileName: result.fileName,
+                  bytes: File(result.filePath).readAsBytesSync(),
+                  mimeType: isPdf
+                      ? 'application/pdf'
+                      : 'application/vnd.openxmlformats-'
+                          'officedocument.spreadsheetml.sheet',
+                );
+              },
+              icon: const Icon(Icons.share, size: 18),
+              label: const Text('Bagikan juga'),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.textSecondary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
