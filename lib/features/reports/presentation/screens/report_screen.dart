@@ -5,6 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/utils/export_service.dart';
+import '../../../settings/presentation/providers/settings_provider.dart';
+import '../../../pos/data/datasources/transaction_datasource.dart';
+import '../../../pos/presentation/providers/transaction_provider.dart';
+
 import '../../../../core/database/app_database.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/utils/currency_formatter.dart';
@@ -19,6 +24,117 @@ class ReportScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedDate = ref.watch(selectedDateProvider);
 
+    Future<void> _onExport(
+      BuildContext context,
+      WidgetRef ref,
+      String type,
+    ) async {
+      // Show loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.all(AppSizes.lg),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: AppSizes.md),
+                  Text('Membuat laporan...'),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      try {
+        final date = ref.read(selectedDateProvider);
+        final summary = await ref.read(
+          reportSummaryProvider.future,
+        );
+        final best = await ref.read(
+          reportBestSellerProvider.future,
+        );
+        final trx = await ref.read(
+          reportTransactionsProvider.future,
+        );
+        final settings = ref.read(settingsStreamProvider).value;
+
+        ExportResult result;
+
+        if (type == 'pdf') {
+          result = await ExportService.instance.exportPdf(
+            date: date,
+            summary: summary,
+            bestSellers: best,
+            transactions: trx,
+            settings: settings,
+          );
+        } else {
+          result = await ExportService.instance.exportExcel(
+            date: date,
+            summary: summary,
+            bestSellers: best,
+            transactions: trx,
+            settings: settings,
+          );
+        }
+
+        // Close loading
+        if (context.mounted) Navigator.pop(context);
+
+        if (result.success && context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(
+                    Icons.check_circle,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '${result.fileName} berhasil dibuat',
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: AppColors.success,
+              behavior: SnackBarBehavior.floating,
+              action: SnackBarAction(
+                label: 'Buka',
+                textColor: Colors.white,
+                onPressed: () =>
+                    ExportService.instance.openFile(result.filePath),
+              ),
+            ),
+          );
+        } else if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result.error ?? 'Gagal export'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: $e'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Laporan Penjualan'),
@@ -26,6 +142,36 @@ class ReportScreen extends ConsumerWidget {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          // ✅ Export menu
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.download),
+            tooltip: 'Download Laporan',
+            onSelected: (value) => _onExport(context, ref, value),
+            itemBuilder: (_) => [
+              const PopupMenuItem(
+                value: 'pdf',
+                child: Row(
+                  children: [
+                    Icon(Icons.picture_as_pdf, color: Colors.red, size: 20),
+                    SizedBox(width: 8),
+                    Text('Export PDF'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'excel',
+                child: Row(
+                  children: [
+                    Icon(Icons.table_chart, color: Colors.green, size: 20),
+                    SizedBox(width: 8),
+                    Text('Export Excel'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
       body: Column(
         children: [
