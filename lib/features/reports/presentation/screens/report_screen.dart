@@ -12,9 +12,6 @@ import 'package:printing/printing.dart';
 import '../../../../core/utils/export_service.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
 
-import '../../../pos/data/datasources/transaction_datasource.dart';
-import '../../../pos/presentation/providers/transaction_provider.dart';
-
 import '../../../../core/database/app_database.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/utils/currency_formatter.dart';
@@ -201,7 +198,7 @@ class ReportScreen extends ConsumerWidget {
   }
 
   // ✅ Method _showExportSuccess SEBELUM _onExport
-void _showExportSuccess(
+  void _showExportSuccess(
     BuildContext context,
     ExportResult result,
   ) {
@@ -240,7 +237,7 @@ void _showExportSuccess(
     }
   }
 
-Future<void> _onExport(
+  Future<void> _onExport(
     BuildContext context,
     WidgetRef ref,
     String type,

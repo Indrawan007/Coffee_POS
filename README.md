@@ -1,18 +1,51 @@
 # coffee_pos
 
-A new Flutter project.
+Aplikasi kasir coffee shop offline untuk Android, dibangun dengan Flutter.
+---
+## Fitur
 
-## Getting Started
+- Kasir dengan varian & add-on produk
+- Manajemen menu, kategori & user
+- Laporan penjualan harian
+- Export laporan PDF & Excel
+- Cetak struk Bluetooth thermal printer
+- Backup & restore data lokal
+- Auto sync Google Drive
+- PIN lock & keamanan akun
+- Responsive (HP & tablet)
+- 100% offline
+---
+## Tech Stack
 
-This project is a starting point for a Flutter application.
+**Framework**	    Flutter + Dart
+**Database**	    SQLite (Drift)
+**State**	        Riverpod
+**Navigation**	  GoRouter
+**Cloud	Google**  Drive API
+---
+## Cara Jalankan
+```bash
+git clone https://github.com/username/coffee_pos.git
+cd coffee_pos
 
-A few resources to get you started if this is your first Flutter project:
+flutter pub get
+dart run build_runner build --delete-conflicting-outputs
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+flutter run
+```
+---
+## Pertama Kali Buka
+- Buat akun Admin (nama toko, username, - password)
+- Login
+- Mulai tambah kategori & produk
+- Siap transaksi
+---
+## Lupa PIN
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-# Coffee_POS
+Tap ikon 🔒 di layar PIN sebanyak 7x → masukkan akun admin → PIN direset.
+---
+## Minimum
+
+- Android 5.0+
+- RAM 2GB
+- Bluetooth (untuk printer)
