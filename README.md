@@ -17,11 +17,11 @@ Aplikasi kasir coffee shop offline untuk Android, dibangun dengan Flutter.
 ---
 ## Tech Stack
 
-**Framework**	    Flutter + Dart
-**Database**	    SQLite (Drift)
-**State**	        Riverpod
-**Navigation**	  GoRouter
-**Cloud	Google**  Drive API
+- **Framework**	    Flutter + Dart
+- **Database**	    SQLite (Drift)
+- **State**	        Riverpod
+- **Navigation**	  GoRouter
+- **Cloud	Google**  Drive API
 ---
 ## Cara Jalankan
 ```bash
