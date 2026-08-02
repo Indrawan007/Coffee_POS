@@ -5,8 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+// Tambah di atas file
+import 'dart:typed_data';
+import 'package:printing/printing.dart';
 import '../../../../core/utils/export_service.dart';
 import '../../../settings/presentation/providers/settings_provider.dart';
+
 import '../../../pos/data/datasources/transaction_datasource.dart';
 import '../../../pos/presentation/providers/transaction_provider.dart';
 
@@ -17,123 +21,90 @@ import '../../../../core/utils/date_formatter.dart';
 import '../providers/report_provider.dart';
 import 'transaction_detail_screen.dart';
 
+class _ExportOption extends StatelessWidget {
+  const _ExportOption({
+    required this.icon,
+    required this.iconColor,
+    required this.label,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final String label;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(
+          AppSizes.radiusMd,
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(AppSizes.md),
+          decoration: BoxDecoration(
+            border: Border.all(color: AppColors.border),
+            borderRadius: BorderRadius.circular(
+              AppSizes.radiusMd,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: iconColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(
+                    AppSizes.radiusSm,
+                  ),
+                ),
+                child: Icon(icon, color: iconColor),
+              ),
+              const SizedBox(width: AppSizes.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textHint,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right,
+                color: AppColors.textHint,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 class ReportScreen extends ConsumerWidget {
   const ReportScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedDate = ref.watch(selectedDateProvider);
-
-    Future<void> _onExport(
-      BuildContext context,
-      WidgetRef ref,
-      String type,
-    ) async {
-      // Show loading
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => const Center(
-          child: Card(
-            child: Padding(
-              padding: EdgeInsets.all(AppSizes.lg),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: AppSizes.md),
-                  Text('Membuat laporan...'),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-
-      try {
-        final date = ref.read(selectedDateProvider);
-        final summary = await ref.read(
-          reportSummaryProvider.future,
-        );
-        final best = await ref.read(
-          reportBestSellerProvider.future,
-        );
-        final trx = await ref.read(
-          reportTransactionsProvider.future,
-        );
-        final settings = ref.read(settingsStreamProvider).value;
-
-        ExportResult result;
-
-        if (type == 'pdf') {
-          result = await ExportService.instance.exportPdf(
-            date: date,
-            summary: summary,
-            bestSellers: best,
-            transactions: trx,
-            settings: settings,
-          );
-        } else {
-          result = await ExportService.instance.exportExcel(
-            date: date,
-            summary: summary,
-            bestSellers: best,
-            transactions: trx,
-            settings: settings,
-          );
-        }
-
-        // Close loading
-        if (context.mounted) Navigator.pop(context);
-
-        if (result.success && context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  const Icon(
-                    Icons.check_circle,
-                    color: Colors.white,
-                    size: 18,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '${result.fileName} berhasil dibuat',
-                    ),
-                  ),
-                ],
-              ),
-              backgroundColor: AppColors.success,
-              behavior: SnackBarBehavior.floating,
-              action: SnackBarAction(
-                label: 'Buka',
-                textColor: Colors.white,
-                onPressed: () =>
-                    ExportService.instance.openFile(result.filePath),
-              ),
-            ),
-          );
-        } else if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(result.error ?? 'Gagal export'),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
-      } catch (e) {
-        if (context.mounted) {
-          Navigator.pop(context);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error: $e'),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
-      }
-    }
 
     return Scaffold(
       appBar: AppBar(
@@ -143,7 +114,6 @@ class ReportScreen extends ConsumerWidget {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
-          // ✅ Export menu
           PopupMenuButton<String>(
             icon: const Icon(Icons.download),
             tooltip: 'Download Laporan',
@@ -202,6 +172,382 @@ class ReportScreen extends ConsumerWidget {
       ),
     );
   }
+
+  // ✅ Method _showExportSuccess SEBELUM _onExport
+  void _showExportSuccess(
+    BuildContext context,
+    ExportResult result,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppSizes.radiusXl),
+        ),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(AppSizes.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: AppColors.success.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.check_circle,
+                color: AppColors.success,
+                size: 36,
+              ),
+            ),
+            const SizedBox(height: AppSizes.md),
+            const Text(
+              'Laporan Berhasil Dibuat! ✅',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: AppSizes.sm),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppSizes.md),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceVar,
+                borderRadius: BorderRadius.circular(
+                  AppSizes.radiusMd,
+                ),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        result.fileName.endsWith('.pdf')
+                            ? Icons.picture_as_pdf
+                            : Icons.table_chart,
+                        color: result.fileName.endsWith('.pdf')
+                            ? Colors.red
+                            : Colors.green,
+                      ),
+                      const SizedBox(width: AppSizes.sm),
+                      Expanded(
+                        child: Text(
+                          result.fileName,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSizes.xs),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.folder_outlined,
+                        size: 16,
+                        color: AppColors.textHint,
+                      ),
+                      const SizedBox(width: AppSizes.xs),
+                      Expanded(
+                        child: Text(
+                          result.filePath,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textHint,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSizes.lg),
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 48,
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('Tutup'),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSizes.md),
+                Expanded(
+                  child: SizedBox(
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        ExportService.instance.openFile(result.filePath);
+                      },
+                      icon: const Icon(Icons.open_in_new),
+                      label: const Text('Buka File'),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSizes.md),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _onExport(
+    BuildContext context,
+    WidgetRef ref,
+    String type,
+  ) async {
+    final date = ref.read(selectedDateProvider);
+    final dateStr = DateFormat('yyyyMMdd').format(date);
+
+    // ✅ Bottom sheet pilihan
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppSizes.radiusXl),
+        ),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(AppSizes.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: AppSizes.lg),
+
+            // Icon format
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: type == 'pdf'
+                    ? Colors.red.withOpacity(0.1)
+                    : Colors.green.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                type == 'pdf' ? Icons.picture_as_pdf : Icons.table_chart,
+                color: type == 'pdf' ? Colors.red : Colors.green,
+                size: 28,
+              ),
+            ),
+            const SizedBox(height: AppSizes.sm),
+            Text(
+              type == 'pdf' ? 'Export Laporan PDF' : 'Export Laporan Excel',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              DateFormat('dd MMMM yyyy', 'id_ID').format(date),
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 13,
+              ),
+            ),
+            const SizedBox(height: AppSizes.lg),
+
+            // ✅ Simpan ke folder lokal
+            _ExportOption(
+              icon: Icons.save_alt,
+              iconColor: AppColors.success,
+              label: 'Simpan ke Penyimpanan',
+              subtitle: 'Folder CoffeePOS_Reports',
+              onTap: () => Navigator.pop(ctx, 'save'),
+            ),
+            const SizedBox(height: AppSizes.sm),
+
+            // ✅ Share / kirim ke app lain
+            _ExportOption(
+              icon: Icons.share,
+              iconColor: AppColors.info,
+              label: 'Bagikan File',
+              subtitle: 'WhatsApp, Email, Drive, dll',
+              onTap: () => Navigator.pop(ctx, 'share'),
+            ),
+
+            // ✅ Preview (PDF only)
+            if (type == 'pdf') ...[
+              const SizedBox(height: AppSizes.sm),
+              _ExportOption(
+                icon: Icons.visibility,
+                iconColor: AppColors.primary,
+                label: 'Preview & Print',
+                subtitle: 'Lihat sebelum simpan / print',
+                onTap: () => Navigator.pop(ctx, 'preview'),
+              ),
+            ],
+
+            const SizedBox(height: AppSizes.lg),
+          ],
+        ),
+      ),
+    );
+
+    if (action == null || !context.mounted) return;
+
+    // Loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => Center(
+        child: Card(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSizes.lg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: AppSizes.md),
+                Text(
+                  action == 'preview'
+                      ? 'Membuat preview...'
+                      : action == 'share'
+                          ? 'Menyiapkan file...'
+                          : 'Menyimpan file...',
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      final summary = await ref.read(
+        reportSummaryProvider.future,
+      );
+      final best = await ref.read(
+        reportBestSellerProvider.future,
+      );
+      final trx = await ref.read(
+        reportTransactionsProvider.future,
+      );
+      final settings = ref.read(settingsStreamProvider).value;
+      final export = ExportService.instance;
+
+      // ── PREVIEW (PDF only) ────────────────────
+      if (action == 'preview' && type == 'pdf') {
+        final bytes = await export.generatePdfBytes(
+          date: date,
+          summary: summary,
+          bestSellers: best,
+          transactions: trx,
+          settings: settings,
+        );
+
+        if (context.mounted) Navigator.pop(context);
+
+        if (context.mounted) {
+          await Printing.layoutPdf(
+            onLayout: (_) => bytes,
+            name: 'Laporan_$dateStr',
+          );
+        }
+        return;
+      }
+
+      // Generate bytes
+      final fileName =
+          type == 'pdf' ? 'Laporan_$dateStr.pdf' : 'Laporan_$dateStr.xlsx';
+
+      Uint8List bytes;
+      if (type == 'pdf') {
+        bytes = await export.generatePdfBytes(
+          date: date,
+          summary: summary,
+          bestSellers: best,
+          transactions: trx,
+          settings: settings,
+        );
+      } else {
+        bytes = export.generateExcelBytes(
+          date: date,
+          summary: summary,
+          bestSellers: best,
+          transactions: trx,
+          settings: settings,
+        )!;
+      }
+
+      if (context.mounted) Navigator.pop(context);
+      if (!context.mounted) return;
+
+      ExportResult result;
+
+      // ── SHARE ─────────────────────────────────
+      if (action == 'share') {
+        result = await export.shareFile(
+          fileName: fileName,
+          bytes: bytes,
+          mimeType: type == 'pdf'
+              ? 'application/pdf'
+              : 'application/vnd.openxmlformats-officedocument'
+                  '.spreadsheetml.sheet',
+        );
+        // Share tidak perlu success sheet
+        if (!result.success && result.error != null && context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result.error!),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+        return;
+      }
+
+      // ── SAVE ──────────────────────────────────
+      result = await export.saveToDownloads(
+        fileName: fileName,
+        bytes: bytes,
+      );
+
+      if (!context.mounted) return;
+
+      if (result.success) {
+        _showExportSuccess(context, result);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.error ?? 'Gagal'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
 }
 
 // ═══════════════════════════════════════════════════
@@ -256,9 +602,8 @@ class _DatePickerBar extends ConsumerWidget {
                   ),
                   Text(
                     _isToday(selectedDate)
-                      ? 'Hari ini'
-                      : DateFormat('EEEE', 'id_ID')
-                          .format(selectedDate),
+                        ? 'Hari ini'
+                        : DateFormat('EEEE', 'id_ID').format(selectedDate),
                     style: const TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 12,
@@ -272,12 +617,12 @@ class _DatePickerBar extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.chevron_right),
             onPressed: _isToday(selectedDate)
-              ? null
-              : () => notifier.setDate(
-                  selectedDate.add(
-                    const Duration(days: 1),
-                  ),
-                ),
+                ? null
+                : () => notifier.setDate(
+                      selectedDate.add(
+                        const Duration(days: 1),
+                      ),
+                    ),
           ),
         ],
       ),
@@ -287,8 +632,8 @@ class _DatePickerBar extends ConsumerWidget {
   bool _isToday(DateTime date) {
     final now = DateTime.now();
     return date.year == now.year &&
-      date.month == now.month &&
-      date.day == now.day;
+        date.month == now.month &&
+        date.day == now.day;
   }
 }
 
@@ -307,8 +652,8 @@ class _SummarySection extends ConsumerWidget {
       error: (e, _) => _ErrorCard(message: e.toString()),
       data: (summary) {
         final totalRevenue = _toDouble(summary['total_revenue']);
-        final totalTrx     = _toInt(summary['total_trx']);
-        final avgTrx       = _toDouble(summary['avg_trx']);
+        final totalTrx = _toInt(summary['total_trx']);
+        final avgTrx = _toDouble(summary['avg_trx']);
 
         // ✅ Jika semua data 0 → tampilkan empty state
         if (totalTrx == 0) {
@@ -564,8 +909,7 @@ class _BestSellerSection extends ConsumerWidget {
           child: Padding(
             padding: const EdgeInsets.all(AppSizes.md),
             child: Column(
-              crossAxisAlignment:
-                CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Row(
                   children: [
@@ -584,12 +928,10 @@ class _BestSellerSection extends ConsumerWidget {
                   ],
                 ),
                 const Divider(),
-
                 if (items.isEmpty)
                   const _EmptySection(
                     icon: Icons.star_outline,
-                    message:
-                      'Belum ada produk terjual hari ini',
+                    message: 'Belum ada produk terjual hari ini',
                   )
                 else
                   ...items.asMap().entries.map((e) {
@@ -632,20 +974,20 @@ class _BestSellerItem extends StatelessWidget {
       leading: CircleAvatar(
         radius: 14,
         backgroundColor: rank == 1
-          ? AppColors.accent
-          : rank == 2
-            ? AppColors.primary.withOpacity(0.2)
-            : AppColors.border,
+            ? AppColors.accent
+            : rank == 2
+                ? AppColors.primary.withOpacity(0.2)
+                : AppColors.border,
         child: Text(
           '$rank',
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.bold,
             color: rank == 1
-              ? Colors.white
-              : rank == 2
-                ? AppColors.primary
-                : AppColors.textSecondary,
+                ? Colors.white
+                : rank == 2
+                    ? AppColors.primary
+                    : AppColors.textSecondary,
           ),
         ),
       ),
@@ -682,16 +1024,15 @@ class _PaymentBreakdownSection extends ConsumerWidget {
       loading: () => const _ShimmerCard(),
       error: (e, _) => const SizedBox.shrink(),
       data: (summary) {
-        final totalCash    = _toDouble(summary['total_cash']);
+        final totalCash = _toDouble(summary['total_cash']);
         final totalNonCash = _toDouble(summary['total_non_cash']);
-        final totalTrx     = _toInt(summary['total_trx']);
+        final totalTrx = _toInt(summary['total_trx']);
 
         return Card(
           child: Padding(
             padding: const EdgeInsets.all(AppSizes.md),
             child: Column(
-              crossAxisAlignment:
-                CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Row(
                   children: [
@@ -710,12 +1051,10 @@ class _PaymentBreakdownSection extends ConsumerWidget {
                   ],
                 ),
                 const Divider(),
-
                 if (totalTrx == 0)
                   const _EmptySection(
                     icon: Icons.payment_outlined,
-                    message:
-                      'Belum ada pembayaran hari ini',
+                    message: 'Belum ada pembayaran hari ini',
                   )
                 else ...[
                   _PaymentBar(
@@ -796,8 +1135,7 @@ class _TransactionListSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final trxAsync =
-      ref.watch(reportTransactionsProvider);
+    final trxAsync = ref.watch(reportTransactionsProvider);
 
     return trxAsync.when(
       loading: () => const _ShimmerCard(),
@@ -807,8 +1145,7 @@ class _TransactionListSection extends ConsumerWidget {
           child: Padding(
             padding: const EdgeInsets.all(AppSizes.md),
             child: Column(
-              crossAxisAlignment:
-                CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
@@ -841,9 +1178,8 @@ class _TransactionListSection extends ConsumerWidget {
                 if (transactions.isEmpty)
                   _EmptySection(
                     icon: Icons.receipt_long_outlined,
-                    message:
-                      'Belum ada transaksi hari ini.\n'
-                      'Buat transaksi pertama di menu Kasir.',
+                    message: 'Belum ada transaksi hari ini.\n'
+                        'Buat transaksi pertama di menu Kasir.',
                     actionLabel: 'Buka Kasir',
                     onAction: () {
                       Navigator.pop(context);
@@ -851,8 +1187,8 @@ class _TransactionListSection extends ConsumerWidget {
                     },
                   )
                 else
-                  ...transactions.map((trx) =>
-                    _TransactionTile(transaction: trx),
+                  ...transactions.map(
+                    (trx) => _TransactionTile(transaction: trx),
                   ),
               ],
             ),
@@ -869,7 +1205,7 @@ class _TransactionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final trx  = transaction;
+    final trx = transaction;
     final time = DateFormatter.toTimeOnly(
       DateTime.parse(trx.createdAt),
     );
@@ -882,19 +1218,16 @@ class _TransactionTile extends StatelessWidget {
         height: 40,
         decoration: BoxDecoration(
           color: trx.paymentMethod == 'cash'
-            ? AppColors.success.withOpacity(0.1)
-            : AppColors.info.withOpacity(0.1),
+              ? AppColors.success.withOpacity(0.1)
+              : AppColors.info.withOpacity(0.1),
           borderRadius: BorderRadius.circular(
             AppSizes.radiusSm,
           ),
         ),
         child: Icon(
-          trx.paymentMethod == 'cash'
-            ? Icons.money
-            : Icons.credit_card,
-          color: trx.paymentMethod == 'cash'
-            ? AppColors.success
-            : AppColors.info,
+          trx.paymentMethod == 'cash' ? Icons.money : Icons.credit_card,
+          color:
+              trx.paymentMethod == 'cash' ? AppColors.success : AppColors.info,
           size: 20,
         ),
       ),
@@ -1005,29 +1338,31 @@ class _ShimmerCards extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: List.generate(3, (i) => Expanded(
-        child: Container(
-          margin: EdgeInsets.only(
-            right: i < 2 ? AppSizes.sm : 0,
-          ),
-          height: 100,
-          decoration: BoxDecoration(
-            color: AppColors.border.withOpacity(0.3),
-            borderRadius: BorderRadius.circular(
-              AppSizes.radiusMd,
-            ),
-          ),
-          child: const Center(
-            child: SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-              ),
-            ),
-          ),
-        ),
-      )),
+      children: List.generate(
+          3,
+          (i) => Expanded(
+                child: Container(
+                  margin: EdgeInsets.only(
+                    right: i < 2 ? AppSizes.sm : 0,
+                  ),
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: AppColors.border.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(
+                      AppSizes.radiusMd,
+                    ),
+                  ),
+                  child: const Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                      ),
+                    ),
+                  ),
+                ),
+              )),
     );
   }
 }
